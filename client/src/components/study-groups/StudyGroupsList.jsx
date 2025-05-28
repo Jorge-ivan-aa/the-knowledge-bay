@@ -17,11 +17,8 @@ const GroupCard = ({ group, onSelectGroup }) => (
       <h2 className="text-xl font-semibold mb-2 text-[var(--coastal-sea)]">
         {group.name}
       </h2>
-      <p className="text-sm text-gray-600 mb-1">
+      <p className="text-sm text-gray-600 mb-4">
         <span className="font-medium text-gray-700">Interés:</span> {group.interest}
-      </p>
-      <p className="text-sm text-gray-600 mb-3 flex-grow line-clamp-2">
-        {group.description}
       </p>
       <div className="flex justify-between items-center text-xs text-gray-500 mt-auto">
         <span>{group.members} miembros</span>
