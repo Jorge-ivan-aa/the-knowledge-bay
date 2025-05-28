@@ -10,10 +10,10 @@ const GroupView = ({
   onLike,
   onComment,
   fetchMore,
+  hasMore,
+  isLoadingMore,
 }) => {
   const [commentTexts, setCommentTexts] = useState({});
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const [hasMore, setHasMore] = useState(true);
   const scrollableContainerRef = useRef(null);
 
   const handleCommentChange = (postId, text) => {
@@ -27,26 +27,18 @@ const GroupView = ({
 
   useEffect(() => {
     const container = scrollableContainerRef.current;
-    if (!container) return;
+    if (!container || !hasMore) return;
 
     const handleScroll = () => {
       const { scrollTop, scrollHeight, clientHeight } = container;
-      if (scrollHeight - scrollTop - clientHeight < 1 && hasMore && !isLoadingMore) {
-        setIsLoadingMore(true);
-        fetchMore()
-          .then(() => {
-            setIsLoadingMore(false);
-          })
-          .catch(() => {
-            setIsLoadingMore(false);
-            setHasMore(false);
-          });
+      if (scrollHeight - scrollTop - clientHeight < 200 && hasMore && !isLoadingMore) {
+        fetchMore();
       }
     };
 
     container.addEventListener("scroll", handleScroll);
     return () => container.removeEventListener("scroll", handleScroll);
-  }, [fetchMore, hasMore, isLoadingMore]);
+  }, [fetchMore, hasMore, isLoadingMore, posts]);
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
@@ -75,27 +67,30 @@ const GroupView = ({
         ref={scrollableContainerRef}
         className="container mx-auto p-4 sm:p-6 flex-grow overflow-y-auto"
       >
-        <div className="space-y-6">
-          {posts.map((post) => (
-            <PostItem
-              key={post.id}
-              post={post}
-              onLike={() => onLike(group.id, post.id)}
-              onCommentSubmit={() => submitComment(post.id)}
-              commentText={commentTexts[post.id] || ""}
-              onCommentChange={(text) => handleCommentChange(post.id, text)}
-            />
-          ))}
-        </div>
+        {posts && posts.length > 0 ? (
+          <div className="space-y-6">
+            {posts.map((post) => (
+              <PostItem
+                key={post.id}
+                post={post}
+                onLike={() => onLike(group.id, post.id)}
+                onCommentSubmit={() => submitComment(post.id)}
+                commentText={commentTexts[post.id] || ""}
+                onCommentChange={(text) => handleCommentChange(post.id, text)}
+              />
+            ))}
+          </div>
+        ) : (
+          !isLoadingMore && (
+            <p className="text-center text-gray-500 text-lg mt-10">
+              No hay publicaciones en este grupo todavía.
+            </p>
+          )
+        )}
         {isLoadingMore && <LoadingSpinner />}
-        {!hasMore && posts.length > 0 && (
+        {!isLoadingMore && !hasMore && posts && posts.length > 0 && (
           <p className="text-center text-gray-500 my-8">
             ¡Has llegado al final!
-          </p>
-        )}
-        {!posts.length && !isLoadingMore && (
-          <p className="text-center text-gray-500 text-lg mt-10">
-            No hay publicaciones en este grupo todavía.
           </p>
         )}
       </main>

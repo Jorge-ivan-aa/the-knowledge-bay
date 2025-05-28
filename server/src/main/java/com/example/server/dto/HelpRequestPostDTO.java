@@ -1,0 +1,34 @@
+package com.example.server.dto;
+
+public class HelpRequestPostDTO extends PostDTO {
+    private String question;
+    private String details;
+
+    public HelpRequestPostDTO() {
+        super();
+        setType("helprequest");
+    }
+
+    public HelpRequestPostDTO(String id, UserSummary author, String timestamp, int likes, String question, String details) {
+        super(id, "helprequest", author, timestamp, likes);
+        this.question = question;
+        this.details = details;
+    }
+
+    // Getters and Setters
+    public String getQuestion() {
+        return question;
+    }
+
+    public void setQuestion(String question) {
+        this.question = question;
+    }
+
+    public String getDetails() {
+        return details;
+    }
+
+    public void setDetails(String details) {
+        this.details = details;
+    }
+} 
