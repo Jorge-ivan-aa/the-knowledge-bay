@@ -43,23 +43,25 @@ const GroupView = ({
   return (
     <div className="flex flex-col min-h-screen bg-white">
       <header className="p-4 sm:p-6 sticky top-0 bg-white shadow-md z-20">
-        <div className="container mx-auto flex items-center justify-between">
-          <button
-            onClick={onBack}
-            className="flex items-center text-[var(--coastal-sea)] hover:text-[var(--open-sea)] transition-colors p-2 rounded-md hover:bg-gray-100"
-          >
-            <ChevronLeft size={28} className="mr-1" />
-            <span className="hidden sm:inline">Volver a Grupos</span>
-          </button>
-          <div className="text-center">
-            <h1 className="text-xl sm:text-2xl font-bold text-[var(--deep-sea)]">
+        <div className="container mx-auto relative px-0 sm:px-4">
+          <div className="flex justify-start items-center">
+            <button
+              onClick={onBack}
+              className="flex items-center bg-[var(--coastal-sea)] text-white hover:bg-[var(--open-sea)] transition-all duration-300 px-4 py-2 rounded-lg shadow-md hover:shadow-lg z-10 transform hover:scale-105 active:scale-98 font-workSans-medium ml-0"
+            >
+              <ChevronLeft size={20} className="mr-2" />
+              <span className="text-sm sm:text-base">Volver a Grupos</span>
+            </button>
+          </div>
+          
+          <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center w-full">
+            <h1 className="text-xl sm:text-3xl font-bold text-[var(--deep-sea)]">
               {group.name}
             </h1>
-            <p className="text-xs sm:text-sm text-gray-500">
+            <p className="text-xs sm:text-base text-[var(--coastal-sea)] font-medium">
               Interés: {group.interest}
             </p>
           </div>
-          <div className="w-10"></div> {/* Empty div for spacing balance */}
         </div>
       </header>
 
