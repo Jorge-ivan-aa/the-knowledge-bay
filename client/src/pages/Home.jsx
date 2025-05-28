@@ -119,7 +119,6 @@ const Home = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      3
       <NavigationBar title="Inicio" />
       <div className="container mx-auto py-8 px-4 flex-grow">
         {/* Encabezado de bienvenida */}

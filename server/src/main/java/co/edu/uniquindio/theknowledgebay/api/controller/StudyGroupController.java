@@ -1,9 +1,11 @@
-package com.example.server.controller;
+package co.edu.uniquindio.theknowledgebay.api.controller;
 
-import com.example.server.dto.CommentDTO;
-import com.example.server.dto.PostDTO;
-import com.example.server.dto.StudyGroupDTO;
-import com.example.server.service.StudyGroupService;
+import co.edu.uniquindio.theknowledgebay.api.dto.CommentDTO;
+import co.edu.uniquindio.theknowledgebay.api.dto.PostDTO;
+import co.edu.uniquindio.theknowledgebay.api.dto.StudyGroupDTO;
+// Assuming CommentRequest will be a top-level DTO in the correct package
+import co.edu.uniquindio.theknowledgebay.api.dto.CommentRequest;
+import co.edu.uniquindio.theknowledgebay.core.service.StudyGroupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -74,18 +76,5 @@ public class StudyGroupController {
             return ResponseEntity.notFound().build();
         }
     }
-    
-    // DTO for comment request body
-    static class CommentRequest {
-        private String text;
-        private String authorId; // Simulate passing author, in real app use SecurityContext
-        private String authorName;
-
-        public String getText() { return text; }
-        public void setText(String text) { this.text = text; }
-        public String getAuthorId() { return authorId; }
-        public void setAuthorId(String authorId) { this.authorId = authorId; }
-        public String getAuthorName() { return authorName; }
-        public void setAuthorName(String authorName) { this.authorName = authorName; }
-    }
+    // The inner class CommentRequest has been moved to its own DTO file.
 } 

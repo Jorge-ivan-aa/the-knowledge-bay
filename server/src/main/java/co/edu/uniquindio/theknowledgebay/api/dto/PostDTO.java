@@ -1,4 +1,4 @@
-package com.example.server.dto;
+package co.edu.uniquindio.theknowledgebay.api.dto;
 
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;

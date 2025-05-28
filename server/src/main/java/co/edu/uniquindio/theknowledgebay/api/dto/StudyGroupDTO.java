@@ -1,4 +1,4 @@
-package com.example.server.dto;
+package co.edu.uniquindio.theknowledgebay.api.dto;
 
 import java.util.List;
 

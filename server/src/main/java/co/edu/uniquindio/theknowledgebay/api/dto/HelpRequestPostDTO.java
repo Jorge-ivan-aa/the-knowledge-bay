@@ -1,4 +1,4 @@
-package com.example.server.dto;
+package co.edu.uniquindio.theknowledgebay.api.dto;
 
 public class HelpRequestPostDTO extends PostDTO {
     private String question;

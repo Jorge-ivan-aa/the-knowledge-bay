@@ -1,6 +1,6 @@
-package com.example.server.service;
+package co.edu.uniquindio.theknowledgebay.core.service;
 
-import com.example.server.dto.*;
+import co.edu.uniquindio.theknowledgebay.api.dto.*; // Import all DTOs from the correct package
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;

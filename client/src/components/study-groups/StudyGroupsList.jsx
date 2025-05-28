@@ -42,6 +42,7 @@ const StudyGroupsList = ({
   onSelectGroup,
   searchTerm,
   onSearchChange,
+  originalGroupsCount,
 }) => {
   return (
     <div className="container mx-auto p-4 sm:p-6">
@@ -67,9 +68,13 @@ const StudyGroupsList = ({
             <GroupCard key={group.id} group={group} onSelectGroup={onSelectGroup} />
           ))}
         </div>
-      ) : (
+      ) : searchTerm ? (
         <p className="text-center text-gray-500 text-lg mt-10">
           No se encontraron grupos con "{searchTerm}". Intenta otra búsqueda.
+        </p>
+      ) : (
+        <p className="text-center text-gray-500 text-lg mt-10">
+          No hay grupos de estudio disponibles en este momento.
         </p>
       )}
     </div>
