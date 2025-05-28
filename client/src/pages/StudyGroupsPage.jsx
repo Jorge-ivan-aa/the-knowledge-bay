@@ -7,7 +7,7 @@ import {
   getPostsByGroupId,
   likePost,
   addCommentToPost,
-} from "../services/studyGroupService"; // Import the service
+} from "../services/studyGroupApi"; // Updated import path
 
 const StudyGroupsPage = () => {
   const [groups, setGroups] = useState([]);
