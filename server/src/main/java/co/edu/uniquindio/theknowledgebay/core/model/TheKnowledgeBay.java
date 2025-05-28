@@ -41,6 +41,7 @@ public class TheKnowledgeBay {
     private final UserFactory users = UserFactory.getInstance();
     private BinarySearchTree<Content> contentTree;
     private PriorityQueue<HelpRequest> helpRequestQueue;
+    @Getter
     private final DoublyLinkedList<StudyGroup> studyGroups = new DoublyLinkedList<>();
     private final DoublyLinkedList<Chat> chats = new DoublyLinkedList<>();
     private final DoublyLinkedList<Comment> comments = new DoublyLinkedList<>();
@@ -472,6 +473,133 @@ public class TheKnowledgeBay {
         // TODO: implement functionality
     }
 
+    // New method: Find a study group by interest name
+    private StudyGroup findStudyGroupByInterestName(String interestName) {
+        if (interestName == null || interestName.trim().isEmpty()) {
+            return null;
+        }
+        for (int i = 0; i < studyGroups.getSize(); i++) {
+            StudyGroup group = studyGroups.get(i);
+            if (group.getTopic() != null && interestName.equals(group.getTopic().getName())) {
+                return group;
+            }
+        }
+        return null;
+    }
+
+    // New method: Generate a unique ID for a study group based on interest
+    private String generateStudyGroupId(Interest interest) {
+        if (interest == null || interest.getName() == null) {
+            return "group_unknown_" + System.currentTimeMillis();
+        }
+        return interest.getName().toLowerCase().replaceAll("\\s+", "-") + "-group";
+    }
+    
+    // New method: Orchestrates automatic study group creation/joining for a student
+    public void updateAutomaticStudyGroupsForStudent(Student student) {
+        if (student == null || student.getInterests() == null || student.getInterests().isEmpty()) {
+            return;
+        }
+
+        DoublyLinkedList<Interest> studentInterests = student.getInterests();
+        for (int i = 0; i < studentInterests.getSize(); i++) {
+            Interest currentInterest = studentInterests.get(i);
+            if (currentInterest == null || currentInterest.getName() == null) continue;
+
+            StudyGroup existingGroup = findStudyGroupByInterestName(currentInterest.getName());
+
+            if (existingGroup != null) {
+                // Group already exists, add student if not already a member
+                if (!existingGroup.getMembers().contains(student)) {
+                    existingGroup.addStudent(student);
+                }
+                if (student.getStudyGroups() == null) { // Defensive check
+                    student.setStudyGroups(new DoublyLinkedList<>());
+                }
+                if (!student.getStudyGroups().contains(existingGroup)) {
+                    student.getStudyGroups().addLast(existingGroup);
+                }
+            } else {
+                // Group does not exist, check if we need to create one
+                DoublyLinkedList<Student> allStudents = users.getStudents();
+                DoublyLinkedList<Student> interestedStudentsInThisTopic = new DoublyLinkedList<>();
+
+                for (int j = 0; j < allStudents.getSize(); j++) {
+                    Student s = allStudents.get(j);
+                    if (s.getInterests() != null) {
+                        for (int k = 0; k < s.getInterests().getSize(); k++) {
+                            Interest si = s.getInterests().get(k);
+                            if (si != null && currentInterest.getName().equals(si.getName())) {
+                                // Check if this student is already in a group for this interest.
+                                // This prevents counting them again if they removed and re-added the interest.
+                                boolean alreadyInAGroupForThisInterest = false;
+                                if (s.getStudyGroups() != null) {
+                                    for(int l=0; l < s.getStudyGroups().getSize(); l++) {
+                                        StudyGroup sg = s.getStudyGroups().get(l);
+                                        if (sg.getTopic() != null && currentInterest.getName().equals(sg.getTopic().getName())) {
+                                            alreadyInAGroupForThisInterest = true;
+                                            break;
+                                        }
+                                    }
+                                }
+                                if (!alreadyInAGroupForThisInterest) {
+                                    interestedStudentsInThisTopic.addLast(s);
+                                }
+                                break; // Student has the interest, no need to check their other interests
+                            }
+                        }
+                    }
+                }
+                
+                // If the current student (who triggered the update) isn't in the list yet
+                // (e.g., their interest update hasn't been fully saved to their list before this method is called,
+                // or they are a new student not yet in users.getStudents() if called mid-registration)
+                // we ensure they are counted if they have the interest.
+                // However, the logic above for interestedStudentsInThisTopic should correctly find all students
+                // who *currently* have this interest and are not yet in a group for it.
+                // The crucial part is that `student` (the one triggering the update) IS included if they have this interest.
+
+                if (interestedStudentsInThisTopic.getSize() >= 2) {
+                    // Create new group
+                    String newGroupId = generateStudyGroupId(currentInterest);
+                    String newGroupName = "Grupo de " + currentInterest.getName();
+                    StudyGroup newGroup = StudyGroup.builder()
+                            .id(newGroupId)
+                            .name(newGroupName)
+                            .topic(currentInterest)
+                            .hidden(false) // Or based on some logic
+                            .build(); // members, associatedContents, etc., will use @Builder.Default
+
+                    // Add all qualifying students to this new group
+                    for (int j = 0; j < interestedStudentsInThisTopic.getSize(); j++) {
+                        Student member = interestedStudentsInThisTopic.get(j);
+                        newGroup.addStudent(member); // addStudent handles duplicates
+                        if (member.getStudyGroups() == null) { // Defensive
+                            member.setStudyGroups(new DoublyLinkedList<>());
+                        }
+                         if (!member.getStudyGroups().contains(newGroup)) {
+                            member.getStudyGroups().addLast(newGroup);
+                        }
+                    }
+                    
+                    // Also ensure the student who triggered the update is in the group
+                    // (if they weren't caught by the interestedStudentsInThisTopic loop due to timing)
+                     if (!newGroup.getMembers().contains(student)) {
+                        newGroup.addStudent(student);
+                    }
+                    if (student.getStudyGroups() == null) { student.setStudyGroups(new DoublyLinkedList<>());} // Defensive
+                    if (!student.getStudyGroups().contains(newGroup)) {
+                         student.getStudyGroups().addLast(newGroup);
+                    }
+
+
+                    this.studyGroups.addLast(newGroup);
+                    System.out.println("Nuevo grupo creado: " + newGroup.getName() + " con " + newGroup.getMembers().getSize() + " miembros.");
+                }
+            }
+        }
+    }
+
     public DoublyLinkedList<Student> findShortestPath(Student s1, Student s2) {
         // TODO: implement functionality
         return null;
@@ -660,8 +788,13 @@ public class TheKnowledgeBay {
             if (s.getId() != null && s.getId().equals(userId)) {
                 updateStudentFields(s, updated);
                 
-                if (interestNames != null && !interestNames.isEmpty()) {
-                    updateStudentInterests(s, interestNames);
+                boolean interestsChanged = false;
+                if (interestNames != null) {
+                    interestsChanged = updateStudentInterests(s, interestNames);
+                }
+                
+                if (interestsChanged) {
+                    updateAutomaticStudyGroupsForStudent(s);
                 }
                 
                 return;
@@ -703,22 +836,52 @@ public class TheKnowledgeBay {
     }
     
 
-    private void updateStudentInterests(Student target, List<String> interestNames) {
-        System.out.println("Actualizando intereses del estudiante: " + interestNames);
-        
+    private boolean updateStudentInterests(Student target, List<String> interestNames) {
+        boolean changed = false;
         DoublyLinkedList<Interest> newInterests = new DoublyLinkedList<>();
         
-        for (String name : interestNames) {
-            Interest interest = new Interest();
-            interest.setName(name);
-            newInterests.addLast(interest);
+        // Keep track of current interest names for comparison
+        Set<String> currentInterestNames = new HashSet<>();
+        if (target.getInterests() != null) {
+            for (int i = 0; i < target.getInterests().getSize(); i++) {
+                currentInterestNames.add(target.getInterests().get(i).getName());
+            }
         }
-        
+
+        Set<String> newInterestNames = new HashSet<>(interestNames);
+
+        if (!currentInterestNames.equals(newInterestNames)) {
+            changed = true;
+        }
+
+        for (String name : interestNames) {
+            Interest interest = findInterestByName(name); // Assumes a findInterestByName method exists or needs to be created
+            if (interest == null) {
+                // Optionally create new interest if it doesn't exist globally
+                // For now, we only add existing global interests
+                System.out.println("Interest not found in global list: " + name + ". It will not be added to student.");
+            } else {
+                newInterests.addLast(interest);
+            }
+        }
         target.setInterests(newInterests);
-        System.out.println("Intereses actualizados correctamente.");
+        return changed; // Return true if the list of interests was modified
     }
     
- 
+    // Helper method to find an interest by name from the global list
+    private Interest findInterestByName(String name) {
+        if (name == null || name.trim().isEmpty() || this.interests == null) {
+            return null;
+        }
+        for (int i = 0; i < this.interests.getSize(); i++) {
+            Interest interest = this.interests.get(i);
+            if (interest.getName() != null && interest.getName().equalsIgnoreCase(name.trim())) {
+                return interest;
+            }
+        }
+        return null; // Not found
+    }
+
     private void updateStudentFields(Student target, User updated) {
         // update common fields
         if (updated.getUsername() != null) target.setUsername(updated.getUsername());

@@ -1,6 +1,10 @@
 package co.edu.uniquindio.theknowledgebay.core.service;
 
-import co.edu.uniquindio.theknowledgebay.api.dto.*; // Import all DTOs from the correct package
+import co.edu.uniquindio.theknowledgebay.api.dto.*;
+import co.edu.uniquindio.theknowledgebay.core.model.StudyGroup; // Model class
+import co.edu.uniquindio.theknowledgebay.core.model.TheKnowledgeBay;
+import co.edu.uniquindio.theknowledgebay.infrastructure.util.datastructures.lists.DoublyLinkedList;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -13,28 +17,60 @@ import java.util.stream.Collectors;
 @Service
 public class StudyGroupService {
 
-    private final Map<String, StudyGroupDTO> studyGroups = new ConcurrentHashMap<>();
-    private final Map<String, List<PostDTO>> groupPosts = new ConcurrentHashMap<>();
-    private final AtomicLong groupCounter = new AtomicLong();
-    private final AtomicLong postCounter = new AtomicLong();
-    private final AtomicLong commentCounter = new AtomicLong();
+    private final TheKnowledgeBay theKnowledgeBay;
 
-    public StudyGroupService() {
-        // NO LONGER INITIALIZING WITH HARDCODED DATA
-        // The maps studyGroups and groupPosts will start empty.
+    // groupPosts will store posts for groups managed by TheKnowledgeBay or manually created ones.
+    // The IDs will align if groups are consistently identified (e.g., by the string ID we implemented).
+    private final Map<String, List<PostDTO>> groupPosts = new ConcurrentHashMap<>();
+    private final AtomicLong postCounter = new AtomicLong(); // For posts within any group
+    private final AtomicLong commentCounter = new AtomicLong(); // For comments within any post
+    private final AtomicLong manualGroupCounter = new AtomicLong(); // For manually created groups, if any
+
+    @Autowired
+    public StudyGroupService(TheKnowledgeBay theKnowledgeBay) {
+        this.theKnowledgeBay = theKnowledgeBay;
+    }
+
+    private StudyGroupDTO mapToDTO(StudyGroup groupModel) {
+        if (groupModel == null) return null;
+        return new StudyGroupDTO(
+                groupModel.getId(),
+                groupModel.getName(),
+                groupModel.getTopic() != null ? groupModel.getTopic().getName() : "Unknown",
+                groupModel.getMembers() != null ? groupModel.getMembers().getSize() : 0
+        );
     }
 
     public List<StudyGroupDTO> getAllGroups() {
-        return new ArrayList<>(studyGroups.values());
+        DoublyLinkedList<StudyGroup> groupsFromCore = theKnowledgeBay.getStudyGroups();
+        List<StudyGroupDTO> dtos = new ArrayList<>();
+        if (groupsFromCore != null) {
+            for (int i = 0; i < groupsFromCore.getSize(); i++) {
+                dtos.add(mapToDTO(groupsFromCore.get(i)));
+            }
+        }
+        // If manual groups were also supported and stored elsewhere in this service, merge here.
+        // For now, only showing groups from TheKnowledgeBay.
+        return dtos;
     }
 
     public Optional<StudyGroupDTO> getGroupById(String groupId) {
-        return Optional.ofNullable(studyGroups.get(groupId));
+        DoublyLinkedList<StudyGroup> groupsFromCore = theKnowledgeBay.getStudyGroups();
+        if (groupsFromCore != null) {
+            for (int i = 0; i < groupsFromCore.getSize(); i++) {
+                StudyGroup groupModel = groupsFromCore.get(i);
+                if (groupModel.getId().equals(groupId)) {
+                    return Optional.ofNullable(mapToDTO(groupModel));
+                }
+            }
+        }
+        return Optional.empty();
     }
 
     public List<PostDTO> getPostsByGroupId(String groupId, int page, int size) {
+        // This part remains largely the same, as posts are associated by ID, 
+        // whether the group is auto or manually created.
         List<PostDTO> posts = groupPosts.getOrDefault(groupId, Collections.emptyList());
-        // Simple pagination, in a real app this would be more robust
         int start = page * size;
         if (start >= posts.size()) {
             return Collections.emptyList();
@@ -52,10 +88,9 @@ public class StudyGroupService {
 
     public PostDTO likePost(String groupId, String postId, String userId) {
         PostDTO post = getPostById(groupId, postId)
-            .orElseThrow(() -> new NoSuchElementException("Post not found: " + postId));
+            .orElseThrow(() -> new NoSuchElementException("Post not found: " + postId + " in group " + groupId));
         
-        // Basic like toggle, in a real app, track users who liked
-        if (post.isLikedByMe()) { // Assuming likedByMe is a simple toggle for demo
+        if (post.isLikedByMe()) { 
             post.setLikes(post.getLikes() - 1);
             post.setLikedByMe(false);
         } else {
@@ -67,39 +102,70 @@ public class StudyGroupService {
 
     public CommentDTO addCommentToPost(String groupId, String postId, String authorId, String authorName, String text) {
         PostDTO post = getPostById(groupId, postId)
-            .orElseThrow(() -> new NoSuchElementException("Post not found: " + postId));
+            .orElseThrow(() -> new NoSuchElementException("Post not found: " + postId + " in group " + groupId));
         
         UserSummary author = new UserSummary(authorId, authorName);
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm, dd MMM yyyy"));
         CommentDTO newComment = new CommentDTO("c" + commentCounter.incrementAndGet(), author, text, timestamp);
         
+        // Ensure comments list is initialized
+        if (post.getComments() == null) {
+            post.setComments(new ArrayList<>());
+        }
         post.getComments().add(newComment);
         return newComment;
     }
     
-    // Placeholder for creating a new post - not fully implemented as per student restrictions
-    // In a real scenario with permissions, this would be more fleshed out.
+    // This method is now for MANUAL post creation by an authorized user (e.g. admin/moderator)
+    // It assumes the groupId corresponds to a group that exists (either auto or manually created).
     public PostDTO createPost(String groupId, PostDTO postRequest) {
-        if (!studyGroups.containsKey(groupId)) {
-            throw new NoSuchElementException("Group not found: " + groupId);
+        // Check if group exists in TheKnowledgeBay
+        boolean groupExists = false;
+        DoublyLinkedList<StudyGroup> coreGroups = theKnowledgeBay.getStudyGroups();
+        if (coreGroups != null) {
+            for (int i = 0; i < coreGroups.getSize(); i++) {
+                StudyGroup sg = coreGroups.get(i);
+                if (sg != null && sg.getId() != null && sg.getId().equals(groupId)) {
+                    groupExists = true;
+                    break;
+                }
+            }
         }
+
+        if (!groupExists) {
+            // And if not a manually tracked group (if we had such a list here - currently we don't explicitly store manual groups in a separate list in this service for this check)
+            // For now, we only check TheKnowledgeBay
+            throw new NoSuchElementException("Group not found: " + groupId + " for creating post.");
+        }
+
         String postId = "post" + postCounter.incrementAndGet();
         postRequest.setId(postId);
         postRequest.setTimestamp(LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm, dd MMM yyyy")));
-        // Ensure comments list is initialized for new posts
         if (postRequest.getComments() == null) {
             postRequest.setComments(new ArrayList<>());
         }
-        groupPosts.computeIfAbsent(groupId, k -> new ArrayList<>()).add(0, postRequest); // Add to beginning
+        groupPosts.computeIfAbsent(groupId, k -> new ArrayList<>()).add(0, postRequest); 
         return postRequest;
     }
 
-    // Placeholder for creating a new group - not fully implemented as per student restrictions
-    public StudyGroupDTO createStudyGroup(StudyGroupDTO groupRequest) {
-        String groupId = "group" + groupCounter.incrementAndGet();
-        groupRequest.setId(groupId);
-        studyGroups.put(groupId, groupRequest);
-        groupPosts.putIfAbsent(groupId, new ArrayList<>()); // Ensure a post list is ready for the new group
+    // This method is for MANUAL group creation by an admin/moderator.
+    // It does NOT use TheKnowledgeBay's automatic creation logic.
+    // It would need to coordinate with TheKnowledgeBay if we want a unified list of all groups.
+    // For now, it's a separate mechanism if ever used.
+    public StudyGroupDTO createManualStudyGroup(StudyGroupDTO groupRequest) {
+        String groupId = "manual-group-" + manualGroupCounter.incrementAndGet();
+        groupRequest.setId(groupId); // Set the generated ID
+        // How to store this? For now, it won't appear in getAllGroups unless merged.
+        // This implies manual groups would need their own storage if they aren't added to TheKnowledgeBay.studyGroups
+        System.out.println("Manual study group creation requested (not added to central list): " + groupRequest.getName());
+        // If we wanted to add it to the central list (potentially with checks to avoid conflicts with auto-groups):
+        // StudyGroup modelToCreate = new StudyGroup();
+        // modelToCreate.setId(groupId);
+        // modelToCreate.setName(groupRequest.getName());
+        // Interest topic = theKnowledgeBay.findInterestByName(groupRequest.getInterest()); // you'd need this helper in TKB
+        // modelToCreate.setTopic(topic);
+        // theKnowledgeBay.getStudyGroups().addLast(modelToCreate);
+        groupPosts.putIfAbsent(groupId, new ArrayList<>()); 
         return groupRequest;
     }
 } 
