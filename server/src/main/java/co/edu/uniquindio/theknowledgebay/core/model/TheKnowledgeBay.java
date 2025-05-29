@@ -581,14 +581,6 @@ public class TheKnowledgeBay {
                     }
                 }
                 
-                // If the current student (who triggered the update) isn't in the list yet
-                // (e.g., their interest update hasn't been fully saved to their list before this method is called,
-                // or they are a new student not yet in users.getStudents() if called mid-registration)
-                // we ensure they are counted if they have the interest.
-                // However, the logic above for interestedStudentsInThisTopic should correctly find all students
-                // who *currently* have this interest and are not yet in a group for it.
-                // The crucial part is that `student` (the one triggering the update) IS included if they have this interest.
-
                 if (interestedStudentsInThisTopic.getSize() >= 2) {
                     // Create new group
                     String newGroupId = generateStudyGroupId(currentInterest);
@@ -1037,36 +1029,6 @@ public class TheKnowledgeBay {
                     continue;
                 }
 
-                // Specific log for user_one and user_two
-                if ((student1.getId().equals("usuario.uno@example.com") && student2.getId().equals("usuario.dos@example.com")) || 
-                    (student1.getId().equals("usuario.dos@example.com") && student2.getId().equals("usuario.uno@example.com"))) {
-                    System.out.println("[AffinityGraph] Checking pair: " + student1.getId() + " and " + student2.getId());
-                    boolean s1FollowsS2 = isUserFollowing(student1.getId(), student2.getId());
-                    boolean s2FollowsS1 = isUserFollowing(student2.getId(), student1.getId());
-                    boolean sharedInterests = hasSharedInterests(student1, student2);
-                    System.out.println("[AffinityGraph]   " + student1.getId() + " follows " + student2.getId() + ": " + s1FollowsS2);
-                    System.out.println("[AffinityGraph]   " + student2.getId() + " follows " + student1.getId() + ": " + s2FollowsS1);
-                    System.out.println("[AffinityGraph]   Shared interests: " + sharedInterests);
-
-                    boolean connectedByFollowingLog = s1FollowsS2 || s2FollowsS1;
-                    boolean attemptConnection = sharedInterests || connectedByFollowingLog;
-                    System.out.println("[AffinityGraph]   Connected by following (logic): " + connectedByFollowingLog);
-                    System.out.println("[AffinityGraph]   Attempting to connect: " + attemptConnection);
-
-                    if (attemptConnection) {
-                        boolean edgeExistsBeforeAdd = affinityGraph.edgeExists(student1.getId(), student2.getId());
-                        System.out.println("[AffinityGraph]   Edge exists before add? " + edgeExistsBeforeAdd);
-                        if (!edgeExistsBeforeAdd) {
-                            System.out.println("[AffinityGraph]   Adding edge between " + student1.getId() + " and " + student2.getId());
-                            affinityGraph.addEdge(student1.getId(), student2.getId());
-                        } else {
-                            System.out.println("[AffinityGraph]   Edge already exists, not adding again.");
-                        }
-                    } else {
-                        System.out.println("[AffinityGraph]   No connection condition met, not adding edge.");
-                    }
-                }
-                
                 // General logic (existing)
                 boolean connectedByInterest = hasSharedInterests(student1, student2);
                 boolean connectedByFollowing = isUserFollowing(student1.getId(), student2.getId()) || isUserFollowing(student2.getId(), student1.getId());
