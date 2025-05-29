@@ -102,7 +102,8 @@ public class AuthService {
         if (userOpt.isPresent()) {
             User user = userOpt.get();
             if (passwordEncoder.matches(rawPassword, user.getPassword())) {
-                String token = sessionManager.createSession(user.getEmail());
+                String userId = user.getId() != null ? user.getId() : user.getEmail();
+                String token = sessionManager.createSession(userId);
                 String role = getUserRole(user);
                 log.info("Login successful for user: {}", email);
                 return Optional.of(new AuthResultDTO(token, role));

@@ -5,7 +5,7 @@ const API_BASE_URL = "http://localhost:8080/api";
 
 // Función helper para incluir headers de autorización
 const getHeaders = () => {
-  const token = localStorage.getItem("authToken");
+  const token = sessionStorage.getItem("token");
   return {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),

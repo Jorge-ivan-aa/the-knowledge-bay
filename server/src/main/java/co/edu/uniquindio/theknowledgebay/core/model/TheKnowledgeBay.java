@@ -65,7 +65,8 @@ public class TheKnowledgeBay {
 
     public void addStudent(Student student) {
         users.add(student);
-        studentRepository.save(student);
+        // Comentar temporalmente para datos de prueba para evitar problemas con la DB
+        // studentRepository.save(student);
     }
 
     public boolean addContent(Content content) {
@@ -360,39 +361,58 @@ public class TheKnowledgeBay {
     
     // New method: Orchestrates automatic study group creation/joining for a student
     public void updateAutomaticStudyGroupsForStudent(Student student) {
+        System.out.println("=== updateAutomaticStudyGroupsForStudent para: " + student.getUsername() + " (ID: " + student.getId() + ") ===");
+        
         if (student == null || student.getInterests() == null || student.getInterests().isEmpty()) {
+            System.out.println("Estudiante es null o no tiene intereses. Saltando...");
             return;
         }
 
         DoublyLinkedList<Interest> studentInterests = student.getInterests();
+        System.out.println("Estudiante tiene " + studentInterests.getSize() + " intereses");
+        
         for (int i = 0; i < studentInterests.getSize(); i++) {
             Interest currentInterest = studentInterests.get(i);
-            if (currentInterest == null || currentInterest.getName() == null) continue;
+            if (currentInterest == null || currentInterest.getName() == null) {
+                System.out.println("Interés " + i + " es null o sin nombre. Saltando...");
+                continue;
+            }
 
+            System.out.println("Procesando interés: " + currentInterest.getName());
             StudyGroup existingGroup = findStudyGroupByInterestName(currentInterest.getName());
 
             if (existingGroup != null) {
+                System.out.println("Grupo existente encontrado: " + existingGroup.getName());
                 // Group already exists, add student if not already a member
                 if (!existingGroup.getMembers().contains(student)) {
                     existingGroup.addStudent(student);
+                    System.out.println("Estudiante agregado al grupo existente");
                 }
                 if (student.getStudyGroups() == null) { // Defensive check
                     student.setStudyGroups(new DoublyLinkedList<>());
                 }
                 if (!student.getStudyGroups().contains(existingGroup)) {
                     student.getStudyGroups().addLast(existingGroup);
+                    System.out.println("Grupo agregado a la lista del estudiante");
                 }
             } else {
+                System.out.println("No existe grupo para el interés: " + currentInterest.getName() + ". Verificando si crear uno nuevo...");
                 // Group does not exist, check if we need to create one
                 DoublyLinkedList<Student> allStudents = users.getStudents();
+                System.out.println("Total de estudiantes en el sistema: " + allStudents.getSize());
+                
                 DoublyLinkedList<Student> interestedStudentsInThisTopic = new DoublyLinkedList<>();
 
                 for (int j = 0; j < allStudents.getSize(); j++) {
                     Student s = allStudents.get(j);
+                    System.out.println("Verificando estudiante: " + s.getUsername() + " (ID: " + s.getId() + ")");
+                    
                     if (s.getInterests() != null) {
+                        System.out.println("  - Tiene " + s.getInterests().getSize() + " intereses");
                         for (int k = 0; k < s.getInterests().getSize(); k++) {
                             Interest si = s.getInterests().get(k);
                             if (si != null && currentInterest.getName().equals(si.getName())) {
+                                System.out.println("  - ¡Coincidencia de interés encontrada! " + si.getName());
                                 // Check if this student is already in a group for this interest.
                                 // This prevents counting them again if they removed and re-added the interest.
                                 boolean alreadyInAGroupForThisInterest = false;
@@ -401,20 +421,27 @@ public class TheKnowledgeBay {
                                         StudyGroup sg = s.getStudyGroups().get(l);
                                         if (sg.getTopic() != null && currentInterest.getName().equals(sg.getTopic().getName())) {
                                             alreadyInAGroupForThisInterest = true;
+                                            System.out.println("  - Estudiante ya está en un grupo para este interés");
                                             break;
                                         }
                                     }
                                 }
                                 if (!alreadyInAGroupForThisInterest) {
                                     interestedStudentsInThisTopic.addLast(s);
+                                    System.out.println("  - Estudiante agregado a la lista de interesados");
                                 }
                                 break; // Student has the interest, no need to check their other interests
                             }
                         }
+                    } else {
+                        System.out.println("  - No tiene intereses");
                     }
                 }
                 
+                System.out.println("Estudiantes interesados en '" + currentInterest.getName() + "': " + interestedStudentsInThisTopic.getSize());
+                
                 if (interestedStudentsInThisTopic.getSize() >= 2) {
+                    System.out.println("Creando nuevo grupo para el interés: " + currentInterest.getName());
                     // Create new group
                     String newGroupId = generateStudyGroupId(currentInterest);
                     String newGroupName = "Grupo de " + currentInterest.getName();
@@ -435,24 +462,29 @@ public class TheKnowledgeBay {
                          if (!member.getStudyGroups().contains(newGroup)) {
                             member.getStudyGroups().addLast(newGroup);
                         }
+                        System.out.println("Miembro agregado al nuevo grupo: " + member.getUsername());
                     }
                     
                     // Also ensure the student who triggered the update is in the group
                     // (if they weren't caught by the interestedStudentsInThisTopic loop due to timing)
                      if (!newGroup.getMembers().contains(student)) {
                         newGroup.addStudent(student);
+                        System.out.println("Estudiante que triggereó la actualización agregado al grupo");
                     }
                     if (student.getStudyGroups() == null) { student.setStudyGroups(new DoublyLinkedList<>());} // Defensive
                     if (!student.getStudyGroups().contains(newGroup)) {
                          student.getStudyGroups().addLast(newGroup);
+                         System.out.println("Nuevo grupo agregado a la lista del estudiante");
                     }
-
 
                     this.studyGroups.addLast(newGroup);
                     System.out.println("Nuevo grupo creado: " + newGroup.getName() + " con " + newGroup.getMembers().getSize() + " miembros.");
+                } else {
+                    System.out.println("No se puede crear grupo para '" + currentInterest.getName() + "'. Solo " + interestedStudentsInThisTopic.getSize() + " estudiantes interesados (se necesitan al menos 2)");
                 }
             }
         }
+        System.out.println("=== Fin de updateAutomaticStudyGroupsForStudent para: " + student.getUsername() + " ===\n");
     }
 
     public DoublyLinkedList<Student> findShortestPath(Student s1, Student s2) {

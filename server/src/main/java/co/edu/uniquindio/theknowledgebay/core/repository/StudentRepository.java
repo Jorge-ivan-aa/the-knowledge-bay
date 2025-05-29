@@ -32,20 +32,40 @@ public class StudentRepository {
     }
 
     public void save(Student student) {
-        String sql = """
-                INSERT INTO students (username, email, password, first_name, last_name, date_birth, biography)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                """;
+        if (student.getId() != null && !student.getId().isEmpty()) {
+            // Si el estudiante tiene ID, usar INSERT con ID específico
+            String sql = """
+                    INSERT INTO students (id, username, email, password, first_name, last_name, date_birth, biography)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    """;
 
-        jdbcTemplate.update(sql,
-                student.getUsername(),
-                student.getEmail(),
-                student.getPassword(),
-                student.getFirstName(),
-                student.getLastName(),
-                student.getDateBirth() == null ? null : student.getDateBirth().toString(),
-                student.getBiography()
-        );
+            jdbcTemplate.update(sql,
+                    student.getId(),
+                    student.getUsername(),
+                    student.getEmail(),
+                    student.getPassword(),
+                    student.getFirstName(),
+                    student.getLastName(),
+                    student.getDateBirth() == null ? null : student.getDateBirth().toString(),
+                    student.getBiography()
+            );
+        } else {
+            // Si no tiene ID, usar INSERT sin ID (autoincrement)
+            String sql = """
+                    INSERT INTO students (username, email, password, first_name, last_name, date_birth, biography)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                    """;
+
+            jdbcTemplate.update(sql,
+                    student.getUsername(),
+                    student.getEmail(),
+                    student.getPassword(),
+                    student.getFirstName(),
+                    student.getLastName(),
+                    student.getDateBirth() == null ? null : student.getDateBirth().toString(),
+                    student.getBiography()
+            );
+        }
     }
 
     private final RowMapper<Student> studentRowMapper = (rs, rowNum) -> {
