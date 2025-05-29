@@ -47,7 +47,7 @@ public class AuthController {
                 .lastName(registerDto.getLastName())
                 .dateBirth(dateOfBirth)
                 .biography(registerDto.getBiography())
-                .interests(ListToDoublyLinkedList.convert(StringListToInterests.convert(registerDto.getInterests())))
+                .interests(StringListToInterests.convert(registerDto.getInterests()))
                 .build();
 
         String[] registered = authService.registerStudent(newStudent);
