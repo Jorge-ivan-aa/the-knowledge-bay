@@ -45,6 +45,7 @@ public class TheKnowledgeBay {
     private PriorityQueue<HelpRequest> helpRequestQueue;
     @Getter
     private final DoublyLinkedList<StudyGroup> studyGroups = new DoublyLinkedList<>();
+    @Getter
     private final DoublyLinkedList<Chat> chats = new DoublyLinkedList<>();
     private final DoublyLinkedList<Comment> comments = new DoublyLinkedList<>();
     private final DoublyLinkedList<Message> messages = new DoublyLinkedList<>();

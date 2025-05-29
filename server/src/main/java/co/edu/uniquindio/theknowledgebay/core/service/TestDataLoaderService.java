@@ -6,6 +6,8 @@ import co.edu.uniquindio.theknowledgebay.core.model.Interest;
 import co.edu.uniquindio.theknowledgebay.core.model.Content;
 import co.edu.uniquindio.theknowledgebay.core.model.HelpRequest;
 import co.edu.uniquindio.theknowledgebay.core.model.Comment;
+import co.edu.uniquindio.theknowledgebay.core.model.Chat;
+import co.edu.uniquindio.theknowledgebay.core.model.Message;
 import co.edu.uniquindio.theknowledgebay.core.model.enums.ContentType;
 import co.edu.uniquindio.theknowledgebay.core.model.enums.Urgency;
 import co.edu.uniquindio.theknowledgebay.infrastructure.util.datastructures.lists.DoublyLinkedList;
@@ -13,6 +15,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.Month;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -282,6 +286,11 @@ public class TestDataLoaderService {
         
         System.out.println("Likes y comentarios agregados exitosamente.");
 
+        // ===== CREAR CHATS ENTRE ESTUDIANTES =====
+        System.out.println("\nCreando chats entre estudiantes...");
+        createChatsForStudents(students);
+        System.out.println("Chats generados exitosamente.");
+
         System.out.println("\nDatos de prueba comprensivos cargados en español con fechas aleatorias.");
         System.out.println("=== FIN DE LA CARGA DE DATOS ===\n");
     }
@@ -421,5 +430,149 @@ public class TestDataLoaderService {
             list.addLast(interest);
         }
         return list;
+    }
+
+    private void createChatsForStudents(List<Student> students) {
+        LocalDateTime now = LocalDateTime.now();
+        int chatIdCounter = 1;
+        int messageIdCounter = 1;
+        
+        // Crear conversaciones basadas en las relaciones de seguimiento existentes
+        
+        // CHAT 1: Juan Pérez (1) y María López (2) - Discusión académica sobre algoritmos
+        Student juan = students.get(0); // ID: 1
+        Student maria = students.get(1); // ID: 2
+        
+        Chat chat1 = createChat(chatIdCounter++, juan, maria);
+        
+        // Conversación de hace 2 días sobre algoritmos
+        LocalDateTime chat1Base = now.minus(2, ChronoUnit.DAYS).withHour(14).withMinute(30);
+        
+        addMessageToChat(chat1, messageIdCounter++, juan, "Hola María! Vi tu post sobre Quick Sort vs Merge Sort. Muy interesante análisis 👍", chat1Base);
+        addMessageToChat(chat1, messageIdCounter++, maria, "¡Hola Juan! Gracias 😊 Me tomó tiempo investigar las diferencias de rendimiento", chat1Base.plusMinutes(5));
+        addMessageToChat(chat1, messageIdCounter++, juan, "¿Has probado implementarlos en Java? Estoy teniendo problemas con la recursión del Merge Sort", chat1Base.plusMinutes(8));
+        addMessageToChat(chat1, messageIdCounter++, maria, "Sí, es un poco tricky al principio. Te puedo ayudar si quieres. ¿Tienes tiempo mañana?", chat1Base.plusMinutes(12));
+        addMessageToChat(chat1, messageIdCounter++, juan, "¡Perfecto! ¿Te parece bien en la biblioteca a las 3 PM?", chat1Base.plusMinutes(15));
+        addMessageToChat(chat1, messageIdCounter++, maria, "Excelente, nos vemos ahí. Lleva tu código para revisarlo juntos", chat1Base.plusMinutes(18));
+        
+        theKnowledgeBay.getChats().addLast(chat1);
+        System.out.println("Chat creado entre " + juan.getUsername() + " y " + maria.getUsername() + " con " + chat1.getMessages().getSize() + " mensajes");
+        
+        // CHAT 2: Juan Pérez (1) y Carlos Gómez (3) - Machine Learning y Java
+        Student carlos = students.get(2); // ID: 3
+        
+        Chat chat2 = createChat(chatIdCounter++, juan, carlos);
+        
+        // Conversación de hace 1 día sobre ML
+        LocalDateTime chat2Base = now.minus(1, ChronoUnit.DAYS).withHour(16).withMinute(45);
+        
+        addMessageToChat(chat2, messageIdCounter++, carlos, "Juan, vi que estás muy metido en Java. ¿Has pensado en combinar Java con Machine Learning?", chat2Base);
+        addMessageToChat(chat2, messageIdCounter++, juan, "¡Carlos! Sí, me interesa mucho. ¿Qué librerías recomiendas para empezar?", chat2Base.plusMinutes(10));
+        addMessageToChat(chat2, messageIdCounter++, carlos, "Weka es genial para empezar, y también está DL4J (Deep Learning for Java). Muy potentes", chat2Base.plusMinutes(15));
+        addMessageToChat(chat2, messageIdCounter++, juan, "Suena genial! ¿Tienes algún proyecto de ejemplo que pueda revisar?", chat2Base.plusMinutes(20));
+        addMessageToChat(chat2, messageIdCounter++, carlos, "Claro, tengo uno de clasificación de texto. Te lo paso por email", chat2Base.plusMinutes(25));
+        
+        theKnowledgeBay.getChats().addLast(chat2);
+        System.out.println("Chat creado entre " + juan.getUsername() + " y " + carlos.getUsername() + " con " + chat2.getMessages().getSize() + " mensajes");
+        
+        // CHAT 3: María López (2) y Ana Martínez (4) - Estructuras de datos
+        Student ana = students.get(3); // ID: 4
+        
+        Chat chat3 = createChat(chatIdCounter++, maria, ana);
+        
+        // Conversación de hace 3 horas sobre estructuras de datos
+        LocalDateTime chat3Base = now.minus(3, ChronoUnit.HOURS).withMinute(15);
+        
+        addMessageToChat(chat3, messageIdCounter++, ana, "María, necesito tu ayuda con las listas enlazadas. No logro entender cómo funciona el doble enlace", chat3Base);
+        addMessageToChat(chat3, messageIdCounter++, maria, "¡Hola Ana! Las listas doblemente enlazadas son súper útiles. Cada nodo tiene referencia al anterior Y al siguiente", chat3Base.plusMinutes(8));
+        addMessageToChat(chat3, messageIdCounter++, ana, "Ah ok, ¿eso significa que puedo recorrer la lista en ambas direcciones?", chat3Base.plusMinutes(12));
+        addMessageToChat(chat3, messageIdCounter++, maria, "¡Exacto! Es muy útil para implementar operaciones como deshacer/rehacer", chat3Base.plusMinutes(15));
+        addMessageToChat(chat3, messageIdCounter++, ana, "Genial! ¿Me podrías explicar la implementación del método remove?", chat3Base.plusMinutes(18));
+        addMessageToChat(chat3, messageIdCounter++, maria, "Claro, es un poco más complejo porque hay que actualizar tanto el nodo anterior como el siguiente", chat3Base.plusMinutes(22));
+        addMessageToChat(chat3, messageIdCounter++, ana, "Perfecto, ¿podemos vernos después de clase para que me expliques con código?", chat3Base.plusMinutes(25));
+        addMessageToChat(chat3, messageIdCounter++, maria, "¡Por supuesto! Nos vemos en el laboratorio de sistemas a las 5", chat3Base.plusMinutes(28));
+        
+        theKnowledgeBay.getChats().addLast(chat3);
+        System.out.println("Chat creado entre " + maria.getUsername() + " y " + ana.getUsername() + " con " + chat3.getMessages().getSize() + " mensajes");
+        
+        // CHAT 4: Carlos Gómez (3) y Luis Fernández (5) - Deep Learning
+        Student luis = students.get(4); // ID: 5
+        
+        Chat chat4 = createChat(chatIdCounter++, carlos, luis);
+        
+        // Conversación de hace 6 horas sobre deep learning
+        LocalDateTime chat4Base = now.minus(6, ChronoUnit.HOURS).withMinute(30);
+        
+        addMessageToChat(chat4, messageIdCounter++, luis, "Carlos! Vi tu post sobre TensorFlow. ¿Ya tienes experiencia con redes neuronales?", chat4Base);
+        addMessageToChat(chat4, messageIdCounter++, carlos, "Hola Luis! Estoy empezando, pero me fascina el tema. ¿Tú qué tal con Python para ML?", chat4Base.plusMinutes(12));
+        addMessageToChat(chat4, messageIdCounter++, luis, "Python es genial para esto. Pandas, NumPy, Scikit-learn... El ecosistema es increíble", chat4Base.plusMinutes(18));
+        addMessageToChat(chat4, messageIdCounter++, carlos, "Sí, estoy viendo que Python tiene mucha ventaja sobre Java para ML", chat4Base.plusMinutes(25));
+        addMessageToChat(chat4, messageIdCounter++, luis, "Aunque Java está mejorando! DL4J y Weka son opciones sólidas", chat4Base.plusMinutes(30));
+        addMessageToChat(chat4, messageIdCounter++, carlos, "¿Conoces algún buen dataset para practicar clasificación?", chat4Base.plusMinutes(35));
+        addMessageToChat(chat4, messageIdCounter++, luis, "El Iris dataset es clásico para empezar, y MNIST para imágenes. Te paso unos links", chat4Base.plusMinutes(40));
+        
+        theKnowledgeBay.getChats().addLast(chat4);
+        System.out.println("Chat creado entre " + carlos.getUsername() + " y " + luis.getUsername() + " con " + chat4.getMessages().getSize() + " mensajes");
+        
+        // CHAT 5: Sofía Rodríguez (6) y Juan Pérez (1) - Spring Framework
+        Student sofia = students.get(5); // ID: 6
+        
+        Chat chat5 = createChat(chatIdCounter++, sofia, juan);
+        
+        // Conversación de hace 30 minutos sobre Spring
+        LocalDateTime chat5Base = now.minus(30, ChronoUnit.MINUTES);
+        
+        addMessageToChat(chat5, messageIdCounter++, sofia, "Juan, vi que trabajaste con Spring Boot. ¿Qué opinas de Spring Security?", chat5Base);
+        addMessageToChat(chat5, messageIdCounter++, juan, "¡Sofía! Está muy bueno pero puede ser complejo al principio. ¿Para qué lo necesitas?", chat5Base.plusMinutes(3));
+        addMessageToChat(chat5, messageIdCounter++, sofia, "Estoy desarrollando una API REST y necesito autenticación JWT", chat5Base.plusMinutes(6));
+        addMessageToChat(chat5, messageIdCounter++, juan, "Ah perfecto! JWT con Spring Security es muy potente. ¿Ya configuraste el SecurityConfig?", chat5Base.plusMinutes(10));
+        addMessageToChat(chat5, messageIdCounter++, sofia, "Todavía no, me está costando entender los filtros y la cadena de seguridad", chat5Base.plusMinutes(13));
+        addMessageToChat(chat5, messageIdCounter++, juan, "Es normal, es uno de los temas más complejos. ¿Te ayudo a configurarlo?", chat5Base.plusMinutes(16));
+        addMessageToChat(chat5, messageIdCounter++, sofia, "¡Sí por favor! ¿Tienes tiempo ahora? Puedo compartir pantalla", chat5Base.plusMinutes(18));
+        addMessageToChat(chat5, messageIdCounter++, juan, "Claro! Dame 5 minutos que termino algo y te ayudo", chat5Base.plusMinutes(20));
+        
+        theKnowledgeBay.getChats().addLast(chat5);
+        System.out.println("Chat creado entre " + sofia.getUsername() + " y " + juan.getUsername() + " con " + chat5.getMessages().getSize() + " mensajes");
+        
+        // CHAT 6: Ana Martínez (4) y Sofía Rodríguez (6) - Entrevistas técnicas
+        Chat chat6 = createChat(chatIdCounter++, ana, sofia);
+        
+        // Conversación de hace 4 horas sobre entrevistas
+        LocalDateTime chat6Base = now.minus(4, ChronoUnit.HOURS).withMinute(45);
+        
+        addMessageToChat(chat6, messageIdCounter++, ana, "Sofía, vi tu pregunta sobre entrevistas técnicas de Java. ¿Ya tienes alguna entrevista programada?", chat6Base);
+        addMessageToChat(chat6, messageIdCounter++, sofia, "¡Hola Ana! Sí, tengo una la próxima semana en una startup. Estoy nerviosa 😅", chat6Base.plusMinutes(7));
+        addMessageToChat(chat6, messageIdCounter++, ana, "Es normal estar nerviosa! ¿Has practicado algoritmos y estructuras de datos?", chat6Base.plusMinutes(12));
+        addMessageToChat(chat6, messageIdCounter++, sofia, "Un poco, pero siento que me falta práctica con problemas de LeetCode", chat6Base.plusMinutes(18));
+        addMessageToChat(chat6, messageIdCounter++, ana, "Te recomiendo empezar con problemas Easy y Medium. ¿Quieres que practiquemos juntas?", chat6Base.plusMinutes(25));
+        addMessageToChat(chat6, messageIdCounter++, sofia, "¡Me encantaría! ¿Mañana te parece bien? Podemos hacer pair programming", chat6Base.plusMinutes(30));
+        addMessageToChat(chat6, messageIdCounter++, ana, "Perfecto! ¿A las 2 PM en el laboratorio? Podemos resolver algunos problemas de arrays y strings", chat6Base.plusMinutes(35));
+        
+        theKnowledgeBay.getChats().addLast(chat6);
+        System.out.println("Chat creado entre " + ana.getUsername() + " y " + sofia.getUsername() + " con " + chat6.getMessages().getSize() + " mensajes");
+        
+        // Verificación final
+        System.out.println("Total de chats creados: " + theKnowledgeBay.getChats().getSize());
+        System.out.println("Total de mensajes generados: " + (messageIdCounter - 1));
+    }
+    
+    private Chat createChat(int chatId, Student studentA, Student studentB) {
+        return Chat.builder()
+                .chatId(chatId)
+                .studentA(studentA)
+                .studentB(studentB)
+                .messages(new DoublyLinkedList<>())
+                .build();
+    }
+    
+    private void addMessageToChat(Chat chat, int messageId, Student sender, String text, LocalDateTime timestamp) {
+        Message message = Message.builder()
+                .messageId(messageId)
+                .text(text)
+                .sender(sender)
+                .timestamp(timestamp)
+                .build();
+        
+        chat.getMessages().addLast(message);
     }
 } 
