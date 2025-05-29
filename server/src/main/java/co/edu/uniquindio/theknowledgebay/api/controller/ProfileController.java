@@ -301,4 +301,70 @@ public class ProfileController {
         System.out.println("GET /api/profile/following - Devolviendo " + following.size() + " seguidos");
         return ResponseEntity.ok(following);
     }
+
+    /**
+     * Obtener el perfil de cualquier usuario por su ID
+     */
+    @GetMapping("/{userId}")
+    public ResponseEntity<ProfileResponseDTO> getUserProfile(
+            @PathVariable String userId,
+            @RequestHeader(value = "Authorization", required = false) String token) {
+        
+        System.out.println("GET /api/profile/" + userId + " - Token recibido: " + token);
+        
+        String currentUserId = sessionManager.getCurrentUserId(token);
+        System.out.println("GET /api/profile/" + userId + " - Current User ID: " + currentUserId);
+        
+        // Default to user id "1" if no valid token (development stub)
+        if (currentUserId == null) {
+            currentUserId = "1"; 
+            System.out.println("GET /api/profile/" + userId + " - Usando ID por defecto: " + currentUserId);
+        }
+        
+        User user = theKnowledgeBay.getUserById(userId);
+        
+        if (user == null) {
+            System.out.println("GET /api/profile/" + userId + " - Usuario no encontrado con ID: " + userId);
+            return ResponseEntity.notFound().build();
+        }
+        
+        System.out.println("GET /api/profile/" + userId + " - Usuario encontrado: " + user.getUsername());
+        
+        String defaultName = "Información no disponible";
+        LocalDate defaultDate = LocalDate.of(1900,1,1);
+        String defaultBio = "[Tu biografía aquí]";
+        
+        // Calculate user statistics
+        int userContentCount = theKnowledgeBay.getContentCountByUserId(userId);
+        int userRequestsCount = theKnowledgeBay.getHelpRequestCountByUserId(userId);
+        int userGroupCount = theKnowledgeBay.getUserStudyGroupCount(userId);
+        
+        ProfileResponseDTO.ProfileResponseDTOBuilder responseBuilder = ProfileResponseDTO.builder()
+                .id(userId)
+                .username(user.getUsername())
+                .email(user.getEmail())
+                .firstName(user instanceof Student && ((Student) user).getFirstName() != null ? ((Student) user).getFirstName() : defaultName)
+                .lastName(user instanceof Student && ((Student) user).getLastName() != null ? ((Student) user).getLastName() : defaultName)
+                .dateBirth(user instanceof Student && ((Student) user).getDateBirth() != null ? ((Student) user).getDateBirth() : defaultDate)
+                .biography(user instanceof Student && ((Student) user).getBiography() != null ? ((Student) user).getBiography() : defaultBio)
+                .groups(userGroupCount)
+                .contentCount(userContentCount)
+                .helpRequestCount(userRequestsCount)
+                .interests(user instanceof Student && ((Student) user).getStringInterests() != null ? ((Student) user).getStringInterests() : Arrays.asList());
+
+        if (user instanceof Student) {
+            Student student = (Student) user;
+            responseBuilder.following(student.getFollowingCount());
+            responseBuilder.followers(student.getFollowersCount());
+            // Check if current user is following this user
+            responseBuilder.isFollowing(theKnowledgeBay.isUserFollowing(currentUserId, userId));
+        } else {
+            responseBuilder.following(0);
+            responseBuilder.followers(0);
+            responseBuilder.isFollowing(false);
+        }
+        
+        System.out.println("GET /api/profile/" + userId + " - Perfil devuelto exitosamente");
+        return ResponseEntity.ok(responseBuilder.build());
+    }
 }
