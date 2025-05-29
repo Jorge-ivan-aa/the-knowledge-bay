@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
-import { ThumbsUp, MessageCircle, Link as LinkIcon, HelpCircle } from "lucide-react";
+import { ThumbsUp, MessageCircle, Link as LinkIcon, HelpCircle, FileText, Video } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import ReactPlayer from 'react-player/lazy';
 
 const PostItem = ({
   post,
@@ -15,72 +16,83 @@ const PostItem = ({
   const renderPostContent = () => {
     switch (post.type) {
       case "markdown":
-        return (
-          <div className="prose prose-sm sm:prose-base max-w-none break-words text-gray-700">
-            <ReactMarkdown>{post.content}</ReactMarkdown>
-          </div>
-        );
-      case "link":
-        return (
-          <a
-            href={post.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group"
-          >
-            <div className="flex items-center mb-2">
-              <LinkIcon size={20} className="mr-2 text-[var(--coastal-sea)] group-hover:text-[var(--open-sea)]" />
-              <h3 className="font-semibold text-lg text-[var(--coastal-sea)] group-hover:text-[var(--open-sea)]">
-                {post.title}
-              </h3>
-            </div>
-            <p className="text-sm text-gray-700 group-hover:text-gray-800 break-all">
-              {post.url}
-            </p>
-            {post.description && (
-              <p className="text-xs text-gray-500 mt-1">{post.description}</p>
-            )}
-          </a>
-        );
-      case "youtube":
-        const getYouTubeID = (url) => {
-          if (!url) return null;
-          const arr = url.split(/(vi\/|v%3D|v=|\/v\/|youtu\.be\/|\/embed\/)/);
-          return undefined !== arr[2]
-            ? arr[2].split(/[^\w-]/i)[0]
-            : arr[0].includes("youtu")
-            ? arr[0].split(/[^\w-]/i).pop()
-            : null;
-        };
-        const videoId = getYouTubeID(post.videoId);
-        return (
-          <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
-            <h3 className="font-semibold text-lg p-3 bg-gray-50 text-[var(--deep-sea)]">
-              {post.title}
-            </h3>
-            {videoId ? (
-              <div className="relative pt-[56.25%]">
-                <iframe
-                  className="absolute top-0 left-0 w-full h-full"
-                  src={`https://www.youtube.com/embed/${videoId}`}
-                  title={post.title}
-                  frameBorder="0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                ></iframe>
+        switch (post.actualContentType) {
+          case "VIDEO":
+            return (
+              <div className="bg-white rounded-lg overflow-hidden border border-gray-200">
+                {post.title && <h3 className="font-semibold text-lg p-3 bg-gray-50 text-[var(--deep-sea)]">{post.title}</h3>}
+                {post.videoUrl ? (
+                  <div className="player-wrapper aspect-video">
+                    <ReactPlayer 
+                      url={post.videoUrl} 
+                      className="react-player"
+                      controls 
+                      width="100%" 
+                      height="100%" 
+                    />
+                  </div>
+                ) : (
+                  <p className="p-3 text-red-500">
+                    No se pudo cargar el video. Verifique la URL.
+                  </p>
+                )}
+                {post.content && (
+                  <div className="prose prose-sm sm:prose-base max-w-none break-words text-gray-700 p-3">
+                     <ReactMarkdown>{post.content}</ReactMarkdown>
+                  </div>
+                )}
               </div>
-            ) : (
-              <p className="p-3 text-red-500">
-                No se pudo cargar el video. Verifique la URL: {post.videoId}
-              </p>
-            )}
-            {post.description && (
-              <p className="text-xs text-gray-500 p-3 bg-gray-50">
-                {post.description}
-              </p>
-            )}
-          </div>
-        );
+            );
+          case "LINK":
+            return (
+              <a
+                href={post.linkUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block p-4 bg-gray-50 hover:bg-gray-100 rounded-lg transition-colors group border border-gray-200"
+              >
+                <div className="flex items-center mb-2">
+                  <LinkIcon size={20} className="mr-2 text-[var(--coastal-sea)] group-hover:text-[var(--open-sea)] flex-shrink-0" />
+                  <h3 className="font-semibold text-lg text-[var(--coastal-sea)] group-hover:text-[var(--open-sea)] break-all">
+                    {post.title || post.linkUrl}
+                  </h3>
+                </div>
+                {post.content && (
+                    <div className="prose prose-sm sm:prose-base max-w-none break-words text-gray-700 group-hover:text-gray-800">
+                        <ReactMarkdown>{post.content}</ReactMarkdown>
+                    </div>
+                )}
+                {!post.content && <p className="text-sm text-gray-700 group-hover:text-gray-800 break-all">{post.linkUrl}</p>}
+              </a>
+            );
+          case "RESOURCE":
+            return (
+              <div className="p-4 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors group border border-blue-200">
+                <div className="flex items-center mb-2">
+                  <FileText size={20} className="mr-2 text-blue-600 group-hover:text-blue-700 flex-shrink-0" />
+                  <h3 className="font-semibold text-lg text-blue-700 group-hover:text-blue-800 break-all">
+                    {post.title || post.fileName}
+                  </h3>
+                </div>
+                {post.fileName && <p className="text-sm text-blue-700 mb-1">Archivo: {post.fileName}</p>}
+                {post.content && (
+                    <div className="prose prose-sm sm:prose-base max-w-none break-words text-blue-800 group-hover:text-blue-900">
+                        <ReactMarkdown>{post.content}</ReactMarkdown>
+                    </div>
+                )}
+              </div>
+            );
+          case "MARKDOWN":
+          default:
+            return (
+              <div className="p-4 border border-gray-200 rounded-lg">
+                {post.title && <h3 className="font-semibold text-lg mb-2 text-[var(--deep-sea)]">{post.title}</h3>}
+                <div className="prose prose-sm sm:prose-base max-w-none break-words text-gray-700">
+                  <ReactMarkdown>{post.content}</ReactMarkdown>
+                </div>
+              </div>
+            );
+        }
       case "helprequest":
         return (
           <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-lg">
@@ -91,16 +103,14 @@ const PostItem = ({
               />
               <div>
                 <h3 className="font-semibold text-lg text-yellow-700">
-                  Solicitud de Ayuda:
+                  Solicitud de Ayuda: {post.title || "Detalles"} 
                 </h3>
-                <p className="text-yellow-800 break-words">{post.question}</p>
+                <div className="prose prose-sm sm:prose-base max-w-none break-words text-yellow-800">
+                   <ReactMarkdown>{post.details || post.question}</ReactMarkdown>
+                </div>
               </div>
             </div>
-            {post.details && (
-              <p className="text-sm text-yellow-700 mt-2 ml-9 break-words">
-                {post.details}
-              </p>
-            )}
+            <p className="text-xs text-yellow-600 mt-1 ml-9">Urgencia: {post.urgency}</p>
           </div>
         );
       default:

@@ -47,12 +47,32 @@ public class ContentController {
         }
 
         try {
-            // Convert topics to Interest objects
+            // Convert topics to Interest objects from the global list
             DoublyLinkedList<Interest> topics = new DoublyLinkedList<>();
             if (createDto.getTopics() != null) {
                 for (String topicName : createDto.getTopics()) {
-                    topics.addLast(Interest.builder().name(topicName).build());
+                    Interest existingInterest = theKnowledgeBay.findInterestByName(topicName);
+                    if (existingInterest != null) {
+                        topics.addLast(existingInterest);
+                    } else {
+                        // Option 1: Create the interest globally if it doesn't exist
+                        // Interest newGlobalInterest = Interest.builder().name(topicName).build();
+                        // theKnowledgeBay.addInterest(newGlobalInterest); // This will also assign an ID
+                        // topics.addLast(newGlobalInterest);
+                        // Option 2: Or, signal an error if interests must pre-exist
+                        // return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        //        .body(new AuthResponseDTO(false, "El tema '" + topicName + "' no existe."));
+                        // For now, let's assume interests should ideally pre-exist or be created via admin UI.
+                        // If a topic name doesn't match a global interest, we might skip it or log a warning.
+                        // To ensure association, it MUST be a known interest that could have a group.
+                        System.out.println("Warning: Topic '" + topicName + "' provided for content creation does not exist as a global interest. It will not be associated.");
+                    }
                 }
+            }
+
+            // If no valid topics were found/associated, the content might not link to any group.
+            if (topics.isEmpty() && createDto.getTopics() != null && !createDto.getTopics().isEmpty()) {
+                System.out.println("Warning: No valid global interests found for the provided topic names. Content may not be associated with any study group.");
             }
 
             // Parse content type

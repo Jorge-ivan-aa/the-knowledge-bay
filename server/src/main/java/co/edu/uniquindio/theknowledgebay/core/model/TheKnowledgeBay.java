@@ -66,194 +66,6 @@ public class TheKnowledgeBay {
         studentRepository.save(student);
     }
 
-    public void createContent(Content c) {
-        if (contentTree == null) {
-            contentTree = new BinarySearchTree<>();
-        }
-        contentTree.insert(c);
-    }
-
-    // Method to get the count of study groups a user is part of
-    public int getUserStudyGroupCount(String userId) {
-        if (userId == null || userId.isEmpty()) {
-            return 0;
-        }
-        int count = 0;
-        if (studyGroups != null) {
-            for (int i = 0; i < studyGroups.getSize(); i++) {
-                StudyGroup group = studyGroups.get(i);
-                if (group != null && group.getMembers() != null) {
-                    // Assuming StudyGroup.getMembers() returns a list/collection of User or Student objects
-                    // And User/Student object has a getId() method returning String
-                    // We need to check if the user is in the member list
-                    // This part depends on the actual implementation of StudyGroup and its members list
-                    DoublyLinkedList<Student> members = group.getMembers();
-                    if (members != null) {
-                        for (int j = 0; j < members.getSize(); j++) {
-                            User member = members.get(j);
-                            if (member != null && userId.equals(member.getId())) {
-                                count++;
-                                break; // Found in this group, move to the next group
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return count;
-    }
-
-    // HelpRequest operations
-    public boolean addHelpRequest(HelpRequest helpRequest) {
-        try {
-            System.out.println("TheKnowledgeBay - Agregando solicitud de ayuda...");
-            if (helpRequestQueue == null) {
-                helpRequestQueue = new PriorityQueue<>();
-                System.out.println("TheKnowledgeBay - Inicializando cola de prioridad");
-            }
-            
-            // Generate a unique ID for the help request
-            int requestId = generateHelpRequestId();
-            helpRequest.setRequestId(requestId);
-            System.out.println("TheKnowledgeBay - ID generado: " + requestId);
-            
-            helpRequestQueue.insert(helpRequest);
-            System.out.println("TheKnowledgeBay - Solicitud insertada en la cola");
-            return true;
-        } catch (Exception e) {
-            System.err.println("Error adding help request: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
-    }
-
-    public DoublyLinkedList<HelpRequest> getAllHelpRequests() {
-        DoublyLinkedList<HelpRequest> result = new DoublyLinkedList<>();
-        
-        if (helpRequestQueue == null || helpRequestQueue.isEmpty()) {
-            return result;
-        }
-        
-        // Create a copy to preserve the original queue
-        PriorityQueue<HelpRequest> tempQueue = new PriorityQueue<>();
-        
-        // Extract all elements from original queue
-        while (!helpRequestQueue.isEmpty()) {
-            HelpRequest request = helpRequestQueue.dequeue();
-            result.addLast(request);
-            tempQueue.insert(request);
-        }
-        
-        // Restore the original queue
-        while (!tempQueue.isEmpty()) {
-            helpRequestQueue.insert(tempQueue.dequeue());
-        }
-        
-        return result;
-    }
-
-    public HelpRequest getHelpRequestById(int id) {
-        if (helpRequestQueue == null || helpRequestQueue.isEmpty()) {
-            return null;
-        }
-        
-        // Create a temporary queue to search through
-        PriorityQueue<HelpRequest> tempQueue = new PriorityQueue<>();
-        HelpRequest found = null;
-        
-        // Search for the request with the given ID
-        while (!helpRequestQueue.isEmpty()) {
-            HelpRequest request = helpRequestQueue.dequeue();
-            if (request.getRequestId() == id) {
-                found = request;
-            }
-            tempQueue.insert(request);
-        }
-        
-        // Restore the original queue
-        while (!tempQueue.isEmpty()) {
-            helpRequestQueue.insert(tempQueue.dequeue());
-        }
-        
-        return found;
-    }
-
-    public boolean markHelpRequestAsCompleted(int requestId, String userId) {
-        if (helpRequestQueue == null || helpRequestQueue.isEmpty()) {
-            return false;
-        }
-        
-        PriorityQueue<HelpRequest> tempQueue = new PriorityQueue<>();
-        boolean found = false;
-        
-        while (!helpRequestQueue.isEmpty()) {
-            HelpRequest request = helpRequestQueue.dequeue();
-            if (request.getRequestId() == requestId && request.getStudent().getId().equals(userId)) {
-                request.markAsCompleted();
-                found = true;
-            }
-            tempQueue.insert(request);
-        }
-        
-        // Restore the original queue
-        while (!tempQueue.isEmpty()) {
-            helpRequestQueue.insert(tempQueue.dequeue());
-        }
-        
-        return found;
-    }
-
-    public boolean updateHelpRequest(int requestId, HelpRequestResponseDTO updatedDto) {
-        if (helpRequestQueue == null || helpRequestQueue.isEmpty()) {
-            return false;
-        }
-
-        HelpRequest existingRequest = null;
-        PriorityQueue<HelpRequest> tempQueue = new PriorityQueue<>();
-
-        // Find the request and store others temporarily
-        while (!helpRequestQueue.isEmpty()) {
-            HelpRequest current = helpRequestQueue.dequeue();
-            if (current.getRequestId() == requestId) {
-                existingRequest = current;
-            } else {
-                tempQueue.insert(current);
-            }
-        }
-
-        // Restore non-matching requests to the main queue
-        while (!tempQueue.isEmpty()) {
-            helpRequestQueue.insert(tempQueue.dequeue());
-        }
-
-        if (existingRequest == null) {
-            return false; // Request not found
-        }
-
-        // Update the existing request object (interests/topics are not directly updatable here)
-        // The DTO might not contain all fields, so only update what's provided
-        if (updatedDto.getInformation() != null) {
-            existingRequest.setInformation(updatedDto.getInformation());
-        }
-        if (updatedDto.getUrgency() != null) {
-            try {
-                existingRequest.setUrgency(Urgency.valueOf(updatedDto.getUrgency().toUpperCase()));
-            } catch (IllegalArgumentException e) {
-                // Handle invalid urgency string, perhaps log or revert
-                System.err.println("Invalid urgency value provided: " + updatedDto.getUrgency());
-            }
-        }
-        existingRequest.setCompleted(updatedDto.isCompleted());
-        // Student and Request Date are generally not changed by admin edit.
-        // Topics are also not part of HelpRequestResponseDTO for direct update.
-
-        // Re-insert the updated request into the priority queue
-        // This ensures its position is correct if urgency (priority) changed.
-        helpRequestQueue.insert(existingRequest);
-        return true;
-    }
-
-    // Content operations
     public boolean addContent(Content content) {
         try {
             if (contentTree == null) {
@@ -264,6 +76,26 @@ public class TheKnowledgeBay {
             content.setContentId(generateContentId());
             
             contentTree.insert(content);
+
+            // Associate content with study groups based on topics (Moved from createContent)
+            if (content.getTopics() != null && !content.getTopics().isEmpty()) {
+                for (int i = 0; i < content.getTopics().getSize(); i++) {
+                    Interest topic = content.getTopics().get(i);
+                    if (topic != null && topic.getName() != null) {
+                        StudyGroup relevantGroup = findStudyGroupByInterestName(topic.getName());
+                        if (relevantGroup != null) {
+                            if (relevantGroup.getAssociatedContents() == null) {
+                                relevantGroup.setAssociatedContents(new DoublyLinkedList<>());
+                            }
+                            // Ensure content is not added multiple times if logic is ever re-run or content has duplicate topics mapping to same group
+                            if (!relevantGroup.getAssociatedContents().contains(content)) { 
+                                relevantGroup.getAssociatedContents().addLast(content);
+                                System.out.println("Content '" + content.getTitle() + "' with ID '" + content.getContentId() + "' associated with group: " + relevantGroup.getName());
+                            }
+                        }
+                    }
+                }
+            }
             return true;
         } catch (Exception e) {
             System.err.println("Error adding content: " + e.getMessage());
@@ -877,7 +709,7 @@ public class TheKnowledgeBay {
         }
 
         for (String name : interestNames) {
-            Interest interest = findInterestByName(name); // Assumes a findInterestByName method exists or needs to be created
+            Interest interest = findInterestByName(name);
             if (interest == null) {
                 // Optionally create new interest if it doesn't exist globally
                 // For now, we only add existing global interests
@@ -891,7 +723,7 @@ public class TheKnowledgeBay {
     }
     
     // Helper method to find an interest by name from the global list
-    private Interest findInterestByName(String name) {
+    public Interest findInterestByName(String name) {
         if (name == null || name.trim().isEmpty() || this.interests == null) {
             return null;
         }
@@ -1580,5 +1412,192 @@ public class TheKnowledgeBay {
             return ((Student) currentUser).isFollowing((Student) targetUser);
         }
         return false;
+    }
+
+    public DoublyLinkedList<HelpRequest> getAllHelpRequests() {
+        DoublyLinkedList<HelpRequest> result = new DoublyLinkedList<>();
+        
+        if (helpRequestQueue == null || helpRequestQueue.isEmpty()) {
+            return result;
+        }
+        
+        // Create a copy to preserve the original queue
+        PriorityQueue<HelpRequest> tempQueue = new PriorityQueue<>();
+        
+        // Extract all elements from original queue
+        while (!helpRequestQueue.isEmpty()) {
+            HelpRequest request = helpRequestQueue.dequeue();
+            result.addLast(request);
+            tempQueue.insert(request);
+        }
+        
+        // Restore the original queue
+        while (!tempQueue.isEmpty()) {
+            helpRequestQueue.insert(tempQueue.dequeue());
+        }
+        
+        return result;
+    }
+
+    public HelpRequest getHelpRequestById(int id) {
+        if (helpRequestQueue == null || helpRequestQueue.isEmpty()) {
+            return null;
+        }
+        
+        // Create a temporary queue to search through
+        PriorityQueue<HelpRequest> tempQueue = new PriorityQueue<>();
+        HelpRequest found = null;
+        
+        // Search for the request with the given ID
+        while (!helpRequestQueue.isEmpty()) {
+            HelpRequest request = helpRequestQueue.dequeue();
+            if (request.getRequestId() == id) {
+                found = request;
+            }
+            tempQueue.insert(request);
+        }
+        
+        // Restore the original queue
+        while (!tempQueue.isEmpty()) {
+            helpRequestQueue.insert(tempQueue.dequeue());
+        }
+        
+        return found;
+    }
+
+    public boolean markHelpRequestAsCompleted(int requestId, String userId) {
+        if (helpRequestQueue == null || helpRequestQueue.isEmpty()) {
+            return false;
+        }
+        
+        PriorityQueue<HelpRequest> tempQueue = new PriorityQueue<>();
+        boolean foundAndUpdated = false;
+        
+        while (!helpRequestQueue.isEmpty()) {
+            HelpRequest request = helpRequestQueue.dequeue();
+            if (request.getRequestId() == requestId && request.getStudent().getId().equals(userId)) {
+                request.markAsCompleted();
+                foundAndUpdated = true;
+            }
+            tempQueue.insert(request);
+        }
+        
+        // Restore the original queue
+        while (!tempQueue.isEmpty()) {
+            helpRequestQueue.insert(tempQueue.dequeue());
+        }
+        
+        return foundAndUpdated;
+    }
+
+    public boolean updateHelpRequest(int requestId, HelpRequestResponseDTO updatedDto) {
+        if (helpRequestQueue == null || helpRequestQueue.isEmpty()) {
+            return false;
+        }
+
+        HelpRequest existingRequest = null;
+        PriorityQueue<HelpRequest> tempQueue = new PriorityQueue<>();
+
+        // Find the request and store others temporarily
+        while (!helpRequestQueue.isEmpty()) {
+            HelpRequest current = helpRequestQueue.dequeue();
+            if (current.getRequestId() == requestId) {
+                existingRequest = current;
+            } else {
+                tempQueue.insert(current);
+            }
+        }
+
+        // Restore non-matching requests to the main queue
+        while (!tempQueue.isEmpty()) {
+            helpRequestQueue.insert(tempQueue.dequeue());
+        }
+
+        if (existingRequest == null) {
+            return false; // Request not found
+        }
+
+        // Update the existing request object
+        if (updatedDto.getInformation() != null) {
+            existingRequest.setInformation(updatedDto.getInformation());
+        }
+        if (updatedDto.getUrgency() != null) {
+            try {
+                existingRequest.setUrgency(Urgency.valueOf(updatedDto.getUrgency().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                System.err.println("Invalid urgency value provided: " + updatedDto.getUrgency());
+            }
+        }
+        existingRequest.setCompleted(updatedDto.isCompleted());
+
+        helpRequestQueue.insert(existingRequest);
+        return true;
+    }
+
+    // Method to get the count of study groups a user is part of
+    public int getUserStudyGroupCount(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        if (studyGroups != null) {
+            for (int i = 0; i < studyGroups.getSize(); i++) {
+                StudyGroup group = studyGroups.get(i);
+                if (group != null && group.getMembers() != null) {
+                    DoublyLinkedList<Student> members = group.getMembers();
+                    if (members != null) {
+                        for (int j = 0; j < members.getSize(); j++) {
+                            User member = members.get(j);
+                            if (member != null && userId.equals(member.getId())) {
+                                count++;
+                                break; // Found in this group, move to the next group
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
+    // HelpRequest operations
+    public boolean addHelpRequest(HelpRequest helpRequest) {
+        try {
+            System.out.println("TheKnowledgeBay - Agregando solicitud de ayuda...");
+            if (helpRequestQueue == null) {
+                helpRequestQueue = new PriorityQueue<>();
+                System.out.println("TheKnowledgeBay - Inicializando cola de prioridad");
+            }
+            
+            int requestId = generateHelpRequestId();
+            helpRequest.setRequestId(requestId);
+            System.out.println("TheKnowledgeBay - ID generado: " + requestId);
+            
+            helpRequestQueue.insert(helpRequest);
+            System.out.println("TheKnowledgeBay - Solicitud insertada en la cola");
+
+            if (helpRequest.getTopics() != null && !helpRequest.getTopics().isEmpty()) {
+                for (int i = 0; i < helpRequest.getTopics().getSize(); i++) {
+                    Interest topic = helpRequest.getTopics().get(i);
+                    if (topic != null && topic.getName() != null) {
+                        StudyGroup relevantGroup = findStudyGroupByInterestName(topic.getName());
+                        if (relevantGroup != null) {
+                            if (relevantGroup.getAssociatedHelpRequests() == null) {
+                                relevantGroup.setAssociatedHelpRequests(new DoublyLinkedList<>());
+                            }
+                            if (!relevantGroup.getAssociatedHelpRequests().contains(helpRequest)) {
+                                relevantGroup.getAssociatedHelpRequests().addLast(helpRequest);
+                                System.out.println("HelpRequest ID '" + helpRequest.getRequestId() + "' associated with group: " + relevantGroup.getName());
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        } catch (Exception e) {
+            System.err.println("Error adding help request: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
     }
 }

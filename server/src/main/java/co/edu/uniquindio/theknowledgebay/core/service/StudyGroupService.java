@@ -13,6 +13,11 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
+import co.edu.uniquindio.theknowledgebay.core.model.Content;
+import co.edu.uniquindio.theknowledgebay.core.model.HelpRequest;
+import co.edu.uniquindio.theknowledgebay.core.model.User;
+import co.edu.uniquindio.theknowledgebay.core.model.Student;
+import java.time.ZoneId;
 
 @Service
 public class StudyGroupService {
@@ -60,6 +65,8 @@ public class StudyGroupService {
             for (int i = 0; i < groupsFromCore.getSize(); i++) {
                 StudyGroup groupModel = groupsFromCore.get(i);
                 if (groupModel.getId().equals(groupId)) {
+                    // Note: The StudyGroupDTO currently doesn't include posts.
+                    // Posts are fetched via getPostsByGroupId.
                     return Optional.ofNullable(mapToDTO(groupModel));
                 }
             }
@@ -68,15 +75,64 @@ public class StudyGroupService {
     }
 
     public List<PostDTO> getPostsByGroupId(String groupId, int page, int size) {
-        // This part remains largely the same, as posts are associated by ID, 
-        // whether the group is auto or manually created.
-        List<PostDTO> posts = groupPosts.getOrDefault(groupId, Collections.emptyList());
-        int start = page * size;
-        if (start >= posts.size()) {
+        StudyGroup groupModel = findStudyGroupModelById(groupId);
+        if (groupModel == null) {
             return Collections.emptyList();
         }
-        int end = Math.min(start + size, posts.size());
-        return posts.subList(start, end);
+
+        List<PostDTO> allPosts = new ArrayList<>();
+
+        // Map associated content
+        DoublyLinkedList<Content> contents = groupModel.getAssociatedContents();
+        if (contents != null) {
+            for (int i = 0; i < contents.getSize(); i++) {
+                Content content = contents.get(i);
+                if (content != null) {
+                    allPosts.add(mapContentToPostDTO(content));
+                }
+            }
+        }
+
+        // Map associated help requests
+        DoublyLinkedList<HelpRequest> helpRequests = groupModel.getAssociatedHelpRequests();
+        if (helpRequests != null) {
+            for (int i = 0; i < helpRequests.getSize(); i++) {
+                HelpRequest hr = helpRequests.get(i);
+                if (hr != null) {
+                    allPosts.add(mapHelpRequestToPostDTO(hr));
+                }
+            }
+        }
+        
+        // Sort all posts by timestamp (descending - most recent first)
+        // Make sure PostDTO has a getTimestamp() method that returns a comparable type (e.g., String in ISO format or LocalDateTime)
+        allPosts.sort((p1, p2) -> {
+            LocalDateTime time1 = LocalDateTime.parse(p1.getTimestamp(), DateTimeFormatter.ISO_DATE_TIME);
+            LocalDateTime time2 = LocalDateTime.parse(p2.getTimestamp(), DateTimeFormatter.ISO_DATE_TIME);
+            return time2.compareTo(time1); // Descending order
+        });
+
+        // Apply pagination
+        int start = page * size;
+        if (start >= allPosts.size()) {
+            return Collections.emptyList();
+        }
+        int end = Math.min(start + size, allPosts.size());
+        return allPosts.subList(start, end);
+    }
+
+    // Helper method to find the StudyGroup model by ID from TheKnowledgeBay
+    private StudyGroup findStudyGroupModelById(String groupId) {
+        DoublyLinkedList<StudyGroup> groupsFromCore = theKnowledgeBay.getStudyGroups();
+        if (groupsFromCore != null) {
+            for (int i = 0; i < groupsFromCore.getSize(); i++) {
+                StudyGroup groupModel = groupsFromCore.get(i);
+                if (groupModel != null && groupModel.getId().equals(groupId)) {
+                    return groupModel;
+                }
+            }
+        }
+        return null;
     }
 
     public Optional<PostDTO> getPostById(String groupId, String postId) {
@@ -167,5 +223,95 @@ public class StudyGroupService {
         // theKnowledgeBay.getStudyGroups().addLast(modelToCreate);
         groupPosts.putIfAbsent(groupId, new ArrayList<>()); 
         return groupRequest;
+    }
+
+    private PostDTO mapContentToPostDTO(Content content) {
+        if (content == null) return null;
+
+        User authorModel = content.getAuthor();
+        UserSummary authorSummary = null;
+        if (authorModel != null) {
+            authorSummary = new UserSummary(authorModel.getId(), authorModel.getUsername());
+        }
+
+        // Convert LocalDate to String timestamp (ISO_DATE_TIME format for consistency)
+        // Content date is just LocalDate, add a default time (e.g., start of day)
+        String timestamp = content.getDate() != null ? 
+                           content.getDate().atStartOfDay(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE_TIME) :
+                           LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME); // Fallback, should not happen
+
+        MarkdownPostDTO dto = new MarkdownPostDTO(
+            "content-" + content.getContentId(), // Prefix to distinguish from HR posts if IDs could overlap
+            authorSummary,
+            timestamp,
+            content.getLikeCount(), // Assuming like count is directly on Content model
+            content.getTitle(),
+            content.getInformation() // Initial content, might be refined below
+        );
+
+        // Set actualContentType based on Content's type
+        dto.setActualContentType(content.getContentType().name());
+
+        // Parse information for URLs or filenames and refine content
+        String mainInformation = content.getInformation();
+        String linkUrl = null;
+        String videoUrl = null;
+        String fileName = null;
+
+        if (content.getInformation() != null) {
+            String[] lines = content.getInformation().split("\n");
+            StringBuilder contentBody = new StringBuilder();
+            for (String line : lines) {
+                if (line.startsWith("Enlace: ")) {
+                    linkUrl = line.substring(8).trim();
+                } else if (line.startsWith("Video: ")) {
+                    videoUrl = line.substring(7).trim();
+                } else if (line.startsWith("Archivo adjunto: ")) {
+                    fileName = line.substring(17).trim();
+                } else {
+                    if (contentBody.length() > 0) {
+                        contentBody.append("\n");
+                    }
+                    contentBody.append(line);
+                }
+            }
+            mainInformation = contentBody.toString();
+        }
+        
+        dto.setContent(mainInformation); // Set the potentially stripped content
+        dto.setVideoUrl(videoUrl);
+        dto.setLinkUrl(linkUrl);
+        dto.setFileName(fileName);
+        
+        // Comments mapping if needed (PostDTO should have a comments list)
+        // For now, assuming comments are fetched separately or not directly mapped here.
+        // dto.setComments(mapCommentsToDTO(content.getComments())); 
+
+        return dto;
+    }
+
+    private PostDTO mapHelpRequestToPostDTO(HelpRequest helpRequest) {
+        if (helpRequest == null) return null;
+
+        Student authorModel = helpRequest.getStudent();
+        UserSummary authorSummary = new UserSummary(
+            authorModel != null ? authorModel.getId() : "unknown_student",
+            authorModel != null ? authorModel.getUsername() : "Unknown Student"
+        );
+
+        HelpRequestPostDTO postDTO = new HelpRequestPostDTO();
+        postDTO.setId("helpreq-" + helpRequest.getRequestId());
+        postDTO.setType("helprequest");
+        postDTO.setAuthor(authorSummary);
+        // Constructing a title for the help request for display uniformity
+        String title = "Solicitud de Ayuda";
+        if (helpRequest.getTopics() != null && !helpRequest.getTopics().isEmpty() && helpRequest.getTopics().get(0) != null) {
+            title += ": " + helpRequest.getTopics().get(0).getName();
+        }
+        postDTO.setQuestion(title); // Using question field for the main title/topic of help request
+        postDTO.setDetails(helpRequest.getInformation());
+        postDTO.setUrgency(helpRequest.getUrgency().name()); // Now using the added urgency field
+        postDTO.setTimestamp(helpRequest.getRequestDate().atStartOfDay(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE_TIME));
+        return postDTO;
     }
 } 
