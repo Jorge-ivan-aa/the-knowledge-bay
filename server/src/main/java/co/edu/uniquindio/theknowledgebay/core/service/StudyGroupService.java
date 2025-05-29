@@ -18,6 +18,7 @@ import co.edu.uniquindio.theknowledgebay.core.model.HelpRequest;
 import co.edu.uniquindio.theknowledgebay.core.model.User;
 import co.edu.uniquindio.theknowledgebay.core.model.Student;
 import java.time.ZoneId;
+import co.edu.uniquindio.theknowledgebay.core.model.Comment;
 
 @Service
 public class StudyGroupService {
@@ -283,11 +284,49 @@ public class StudyGroupService {
         dto.setLinkUrl(linkUrl);
         dto.setFileName(fileName);
         
-        // Comments mapping if needed (PostDTO should have a comments list)
-        // For now, assuming comments are fetched separately or not directly mapped here.
-        // dto.setComments(mapCommentsToDTO(content.getComments())); 
+        // Map comments from Content model to DTO
+        dto.setComments(mapCommentsToDTO(content.getComments()));
 
         return dto;
+    }
+
+    // Helper method to map comments from DoublyLinkedList<Comment> to List<CommentDTO>
+    private List<CommentDTO> mapCommentsToDTO(DoublyLinkedList<Comment> comments) {
+        List<CommentDTO> commentDTOs = new ArrayList<>();
+        if (comments != null) {
+            for (int i = 0; i < comments.getSize(); i++) {
+                Comment comment = comments.get(i);
+                if (comment != null) {
+                    CommentDTO commentDTO = mapCommentToDTO(comment);
+                    if (commentDTO != null) {
+                        commentDTOs.add(commentDTO);
+                    }
+                }
+            }
+        }
+        return commentDTOs;
+    }
+    
+    // Helper method to map individual Comment to CommentDTO
+    private CommentDTO mapCommentToDTO(Comment comment) {
+        if (comment == null) return null;
+        
+        Student author = comment.getAuthor();
+        UserSummary authorSummary = new UserSummary(
+            author != null ? author.getId() : "unknown_user",
+            author != null ? author.getUsername() : "Usuario Desconocido"
+        );
+        
+        String timestamp = comment.getDate() != null ? 
+                          comment.getDate().atStartOfDay(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm, dd MMM yyyy")) :
+                          LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm, dd MMM yyyy"));
+        
+        return new CommentDTO(
+            String.valueOf(comment.getCommentId()),
+            authorSummary,
+            comment.getText(),
+            timestamp
+        );
     }
 
     private PostDTO mapHelpRequestToPostDTO(HelpRequest helpRequest) {
@@ -312,6 +351,10 @@ public class StudyGroupService {
         postDTO.setDetails(helpRequest.getInformation());
         postDTO.setUrgency(helpRequest.getUrgency().name()); // Now using the added urgency field
         postDTO.setTimestamp(helpRequest.getRequestDate().atStartOfDay(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_DATE_TIME));
+        
+        // Map comments from HelpRequest model to DTO
+        postDTO.setComments(mapCommentsToDTO(helpRequest.getComments()));
+        
         return postDTO;
     }
 } 
