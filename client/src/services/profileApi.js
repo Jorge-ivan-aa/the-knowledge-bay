@@ -171,11 +171,43 @@ export const unfollowUser = async (userId) => {
   */
 };
 
+/**
+ * Obtener lista de seguidores del usuario actual
+ */
+export const getFollowers = async () => {
+  try {
+    return await authApi.get('/api/profile/followers');
+  } catch (error) {
+    console.error('Error en getFollowers:', error);
+    return { 
+      success: false, 
+      message: error.message || 'Error al obtener seguidores' 
+    };
+  }
+};
+
+/**
+ * Obtener lista de usuarios seguidos por el usuario actual
+ */
+export const getFollowing = async () => {
+  try {
+    return await authApi.get('/api/profile/following');
+  } catch (error) {
+    console.error('Error en getFollowing:', error);
+    return { 
+      success: false, 
+      message: error.message || 'Error al obtener seguidos' 
+    };
+  }
+};
+
 export default {
   getProfile,
   updateProfile,
   getProfileByUserId,
   getFollowStatus,
   followUser,
-  unfollowUser
+  unfollowUser,
+  getFollowers,
+  getFollowing
 };

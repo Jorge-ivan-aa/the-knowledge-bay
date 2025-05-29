@@ -2,11 +2,13 @@ package co.edu.uniquindio.theknowledgebay.api.controller;
 
 import co.edu.uniquindio.theknowledgebay.api.dto.ProfileUpdateDTO;
 import co.edu.uniquindio.theknowledgebay.api.dto.ProfileResponseDTO;
+import co.edu.uniquindio.theknowledgebay.api.dto.UserSummaryDTO;
 
 import co.edu.uniquindio.theknowledgebay.core.model.Student;
 import co.edu.uniquindio.theknowledgebay.core.model.TheKnowledgeBay;
 import co.edu.uniquindio.theknowledgebay.core.model.User;
 import co.edu.uniquindio.theknowledgebay.core.service.SessionManager;
+import co.edu.uniquindio.theknowledgebay.infrastructure.util.datastructures.nodes.DoublyLinkedNode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +17,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
 
 @RestController
 @RequiredArgsConstructor
@@ -197,5 +200,105 @@ public class ProfileController {
         System.out.println("PUT /api/profile - Usuario actualizado correctamente: " + user.getUsername());
                 
         return ResponseEntity.ok(responseBuilder.build());
+    }
+    
+    /**
+     * Obtener la lista de seguidores del usuario actual
+     */
+    @GetMapping("/followers")
+    public ResponseEntity<List<UserSummaryDTO>> getFollowers(@RequestHeader(value = "Authorization", required = false) String token) {
+        System.out.println("GET /api/profile/followers - Token recibido: " + token);
+        
+        String currentUserId = sessionManager.getCurrentUserId(token);
+        System.out.println("GET /api/profile/followers - User ID: " + currentUserId);
+        
+        // Default to user id "1" if no valid token (development stub)
+        if (currentUserId == null) {
+            currentUserId = "1";
+            System.out.println("GET /api/profile/followers - Usando ID por defecto: " + currentUserId);
+        }
+        
+        User user = theKnowledgeBay.getUserById(currentUserId);
+        if (!(user instanceof Student)) {
+            System.out.println("GET /api/profile/followers - Usuario no es Student o no encontrado");
+            return ResponseEntity.ok(new ArrayList<>());
+        }
+        
+        Student student = (Student) user;
+        List<UserSummaryDTO> followers = new ArrayList<>();
+        
+        System.out.println("GET /api/profile/followers - Procesando seguidores para usuario: " + student.getUsername());
+        
+        if (student.getFollowers() != null) {
+            System.out.println("GET /api/profile/followers - Lista de seguidores no es null, tamaño: " + student.getFollowers().getSize());
+            DoublyLinkedNode<Student> current = student.getFollowers().getHead();
+            while (current != null) {
+                Student follower = current.getData();
+                System.out.println("GET /api/profile/followers - Procesando seguidor: " + follower.getUsername() + " (ID: " + follower.getId() + ")");
+                UserSummaryDTO dto = UserSummaryDTO.builder()
+                        .id(follower.getId())
+                        .username(follower.getUsername())
+                        .firstName(follower.getFirstName())
+                        .lastName(follower.getLastName())
+                        .build();
+                followers.add(dto);
+                current = current.getNext();
+            }
+        } else {
+            System.out.println("GET /api/profile/followers - Lista de seguidores es null");
+        }
+        
+        System.out.println("GET /api/profile/followers - Devolviendo " + followers.size() + " seguidores");
+        return ResponseEntity.ok(followers);
+    }
+    
+    /**
+     * Obtener la lista de usuarios seguidos por el usuario actual
+     */
+    @GetMapping("/following")
+    public ResponseEntity<List<UserSummaryDTO>> getFollowing(@RequestHeader(value = "Authorization", required = false) String token) {
+        System.out.println("GET /api/profile/following - Token recibido: " + token);
+        
+        String currentUserId = sessionManager.getCurrentUserId(token);
+        System.out.println("GET /api/profile/following - User ID: " + currentUserId);
+        
+        // Default to user id "1" if no valid token (development stub)
+        if (currentUserId == null) {
+            currentUserId = "1";
+            System.out.println("GET /api/profile/following - Usando ID por defecto: " + currentUserId);
+        }
+        
+        User user = theKnowledgeBay.getUserById(currentUserId);
+        if (!(user instanceof Student)) {
+            System.out.println("GET /api/profile/following - Usuario no es Student o no encontrado");
+            return ResponseEntity.ok(new ArrayList<>());
+        }
+        
+        Student student = (Student) user;
+        List<UserSummaryDTO> following = new ArrayList<>();
+        
+        System.out.println("GET /api/profile/following - Procesando seguidos para usuario: " + student.getUsername());
+        
+        if (student.getFollowing() != null) {
+            System.out.println("GET /api/profile/following - Lista de seguidos no es null, tamaño: " + student.getFollowing().getSize());
+            DoublyLinkedNode<Student> current = student.getFollowing().getHead();
+            while (current != null) {
+                Student followedUser = current.getData();
+                System.out.println("GET /api/profile/following - Procesando seguido: " + followedUser.getUsername() + " (ID: " + followedUser.getId() + ")");
+                UserSummaryDTO dto = UserSummaryDTO.builder()
+                        .id(followedUser.getId())
+                        .username(followedUser.getUsername())
+                        .firstName(followedUser.getFirstName())
+                        .lastName(followedUser.getLastName())
+                        .build();
+                following.add(dto);
+                current = current.getNext();
+            }
+        } else {
+            System.out.println("GET /api/profile/following - Lista de seguidos es null");
+        }
+        
+        System.out.println("GET /api/profile/following - Devolviendo " + following.size() + " seguidos");
+        return ResponseEntity.ok(following);
     }
 }
