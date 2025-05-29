@@ -9,6 +9,7 @@ import {
   likePost,
   addCommentToPost,
 } from "../services/studyGroupApi"; // Updated import path
+import { useLocation } from 'react-router-dom'; // Import useLocation
 
 const StudyGroupsPage = () => {
   const [allAvailableGroups, setAllAvailableGroups] = useState([]); // Store all groups fetched from API
@@ -19,6 +20,7 @@ const StudyGroupsPage = () => {
   const [isLoadingPosts, setIsLoadingPosts] = useState(false);
   const [postsPage, setPostsPage] = useState(0);
   const [hasMorePosts, setHasMorePosts] = useState(true);
+  const location = useLocation(); // Get location object
 
   useEffect(() => {
     const fetchGroups = async () => {
@@ -26,6 +28,15 @@ const StudyGroupsPage = () => {
         setIsLoading(true);
         const fetchedGroups = await getAllGroups();
         setAllAvailableGroups(fetchedGroups); // Store all fetched groups
+
+        // Check for groupId from route state
+        const groupIdFromState = location.state?.groupId;
+        if (groupIdFromState && fetchedGroups.length > 0) {
+          const groupToSelect = fetchedGroups.find(g => g.id === groupIdFromState);
+          if (groupToSelect) {
+            handleSelectGroup(groupToSelect); // Automatically select the group
+          }
+        }
       } catch (error) {
         console.error("Error fetching groups:", error);
         setAllAvailableGroups([]); // Ensure it's an array in case of error
