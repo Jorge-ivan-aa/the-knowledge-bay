@@ -103,7 +103,7 @@ public class TestDataLoaderService {
         // Estudiante 2 (María López)
         createContentForStudent(student2, "Notación Big O Explicada", ContentType.RESOURCE, "Guía comprensiva para entender la notación Big O para análisis de algoritmos y eficiencia.", createInterestList(interest4, interest3), getRandomDateInMay(currentYear));
         createContentForStudent(student2, "Quick Sort vs Merge Sort", ContentType.ARTICLE, "Análisis comparativo de los algoritmos Quick Sort y Merge Sort, discutiendo pros, contras y casos de uso.", createInterestList(interest4, interest3), getRandomDateInMay(currentYear));
-        createContentForStudent(student2, "Visualizando Algoritmos", ContentType.VIDEO, "http://example.com/algo-viz - Un sitio genial que visualiza algoritmos de ordenamiento y búsqueda de caminos.", createInterestList(interest4), getRandomDateInMay(currentYear));
+        createContentForStudent(student2, "Visualizando Algoritmos", ContentType.VIDEO, "https://www.youtube.com/watch?v=YfNRggRvFCw - Un sitio genial que visualiza algoritmos de ordenamiento y búsqueda de caminos.", createInterestList(interest4), getRandomDateInMay(currentYear));
 
         // Estudiante 3 (Carlos Gómez)
         createContentForStudent(student3, "Papers de ML Favoritos", ContentType.LINK, "Lista curada de papers influyentes en machine learning. http://example.com/ml-papers", createInterestList(interest5), getRandomDateInMay(currentYear));
@@ -111,7 +111,7 @@ public class TestDataLoaderService {
         createContentForStudent(student3, "Top 5 Librerías de Machine Learning", ContentType.RESOURCE, "Reseña de las 5 principales librerías de Python para machine learning: Scikit-learn, TensorFlow, Keras, PyTorch y XGBoost.", createInterestList(interest5), getRandomDateInMay(currentYear));
 
         // Estudiante 4 (Ana Martínez)
-        createContentForStudent(student4, "Algoritmos de Ordenamiento Visualizados", ContentType.VIDEO, "Video explicativo de algoritmos de ordenamiento comunes como bubble sort, insertion sort y selection sort. http://example.com/sorting-video", createInterestList(interest4), getRandomDateInMay(currentYear));
+        createContentForStudent(student4, "Algoritmos de Ordenamiento Visualizados", ContentType.VIDEO, "Video explicativo de algoritmos de ordenamiento comunes como bubble sort, insertion sort y selection sort. https://www.youtube.com/watch?v=pqZ04TT15PQ", createInterestList(interest4), getRandomDateInMay(currentYear));
         createContentForStudent(student4, "Errores Comunes en Estructuras de Datos", ContentType.ARTICLE, "Destacando errores frecuentes que los estudiantes cometen al implementar y usar estructuras de datos comunes.", createInterestList(interest3), getRandomDateInMay(currentYear));
         createContentForStudent(student4, "Consejo para aprender algoritmos avanzados", ContentType.QUESTION, "Estoy cómodo con algoritmos básicos, ¿qué recursos o caminos recomiendan para aprender temas más avanzados como programación dinámica o teoría de grafos?", createInterestList(interest4), getRandomDateInMay(currentYear));
 
@@ -121,7 +121,7 @@ public class TestDataLoaderService {
 
         // Estudiante 6 (Sofía Rodríguez)
         createContentForStudent(student6, "Mejores Prácticas de Concurrencia en Java", ContentType.ARTICLE, "Consejos y patrones para escribir aplicaciones concurrentes robustas, escalables y mantenibles en Java.", createInterestList(interest1), getRandomDateInMay(currentYear));
-        createContentForStudent(student6, "Tutorial de Microservicios con Spring Boot", ContentType.VIDEO, "http://example.com/springboot-microservices - Guía paso a paso para construir microservicios con Spring Boot y Spring Cloud.", createInterestList(interest2, interest1), getRandomDateInMay(currentYear));
+        createContentForStudent(student6, "Tutorial de Microservicios con Spring Boot", ContentType.VIDEO, "https://youtu.be/2sFczigWppk?si=kps-Eh3NxovM4HYm - Guía paso a paso para construir microservicios con Spring Boot y Spring Cloud.", createInterestList(interest2, interest1), getRandomDateInMay(currentYear));
         createContentForStudent(student6, "¿Cómo prepararse para una entrevista técnica de Java?", ContentType.QUESTION, "¿Cuáles son las áreas clave en las que enfocarse y las preguntas comunes en las entrevistas técnicas de Java?", createInterestList(interest1, interest4), getRandomDateInMay(currentYear));
 
         // Crear Solicitudes de Ayuda para los usuarios
