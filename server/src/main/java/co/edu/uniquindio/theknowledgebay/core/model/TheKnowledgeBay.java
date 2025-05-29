@@ -1029,11 +1029,10 @@ public class TheKnowledgeBay {
                     continue;
                 }
 
-                // General logic (existing)
-                boolean connectedByInterest = hasSharedInterests(student1, student2);
-                boolean connectedByFollowing = isUserFollowing(student1.getId(), student2.getId()) || isUserFollowing(student2.getId(), student1.getId());
+                // Updated logic: Edge only if users mutually follow each other.
+                boolean mutuallyFollowing = isUserFollowing(student1.getId(), student2.getId()) && isUserFollowing(student2.getId(), student1.getId());
 
-                if (connectedByInterest || connectedByFollowing) {
+                if (mutuallyFollowing) {
                     try {
                         if (!affinityGraph.edgeExists(student1.getId(), student2.getId())) {
                            affinityGraph.addEdge(student1.getId(), student2.getId());
