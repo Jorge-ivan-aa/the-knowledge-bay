@@ -40,6 +40,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/help-requests/**").permitAll() // Permit help request endpoints
                         .requestMatchers("/api/content/**").permitAll() // Permit content endpoints
                         .requestMatchers("/api/admin/**").permitAll() // Permit admin endpoints for development
+                        .requestMatchers("/api/test-data/load").permitAll() // Permit test data loading endpoint
                         .requestMatchers("/api/users/**").permitAll() // Permit user endpoints
                         .requestMatchers("/api/interests/**").permitAll() // Permit interest management endpoints
                         .requestMatchers("/api/affinity-graph/**").permitAll() // Permit affinity graph endpoints

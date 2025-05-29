@@ -252,6 +252,26 @@ export const loadSampleInterests = async () => {
   return await response.json();
 };
 
+// Cargar datos de prueba comprensivos
+export const loadComprehensiveTestData = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/test-data/load`, {
+      method: "POST",
+      headers: getHeaders(), // Reutiliza los headers existentes, incluyendo Auth si es necesario
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text(); // Obtener más detalles del error
+      throw new Error(`Error loading comprehensive test data: ${response.status} ${errorText}`);
+    }
+    // Asumimos que la respuesta exitosa es un texto, como se definió en el controlador
+    return await response.text(); 
+  } catch (error) {
+    console.error("Failed to load comprehensive test data:", error);
+    throw error;
+  }
+};
+
 // === AFFINITY GRAPH APIs ===
 
 // Obtener datos del grafo de afinidad

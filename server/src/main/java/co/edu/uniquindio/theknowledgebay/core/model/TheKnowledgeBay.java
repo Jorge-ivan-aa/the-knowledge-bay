@@ -33,6 +33,8 @@ import java.util.stream.Collectors;
 @Scope(ConfigurableBeanFactory.SCOPE_SINGLETON)
 public class TheKnowledgeBay {
 
+    private static int nextContentId = 1; // Start IDs from 1
+
     // DataBase connection
     private final StudentRepository studentRepository;
     private final InterestRepository interestRepository;
@@ -327,8 +329,7 @@ public class TheKnowledgeBay {
     }
 
     private int generateContentId() {
-        // Simple ID generation based on current timestamp
-        return (int) (System.currentTimeMillis() % Integer.MAX_VALUE);
+        return nextContentId++; // Use static counter
     }
 
     public void createAutomaticGroups() {
@@ -759,11 +760,26 @@ public class TheKnowledgeBay {
                 return false;
             }
             
-            // Generate unique ID for the interest
-            interest.setIdInterest(generateInterestId());
+            // Use provided ID if available and valid, otherwise generate one.
+            if (interest.getIdInterest() == null || interest.getIdInterest().trim().isEmpty()) {
+                interest.setIdInterest(generateInterestId());
+            }
+            // If an ID like UUID was provided by the caller (e.g. TestDataLoaderService),
+            // it will be used. Otherwise, the generated one is used.
+
             interest.setName(interest.getName().trim());
             
+            // Prevent adding interest with duplicate name to the in-memory list
+            for (int i = 0; i < interests.getSize(); i++) {
+                if (interests.get(i).getName().equalsIgnoreCase(interest.getName())) {
+                    System.err.println("Interest with name '" + interest.getName() + "' already exists in memory. Not adding.");
+                    return false; // Or update existing, depending on desired behavior
+                }
+            }
+
             interests.addLast(interest);
+            // Note: This does not save to InterestRepository. 
+            // That happens separately if needed, e.g. via an admin UI or specific service call.
             return true;
         } catch (Exception e) {
             System.err.println("Error adding interest: " + e.getMessage());

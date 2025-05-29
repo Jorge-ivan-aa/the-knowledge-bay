@@ -33,12 +33,11 @@ public class StudentRepository {
 
     public void save(Student student) {
         String sql = """
-                INSERT INTO students (id, username, email, password, first_name, last_name, date_birth, biography)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO students (username, email, password, first_name, last_name, date_birth, biography)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """;
 
         jdbcTemplate.update(sql,
-                student.getId(),
                 student.getUsername(),
                 student.getEmail(),
                 student.getPassword(),
