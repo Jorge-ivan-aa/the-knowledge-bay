@@ -15,6 +15,7 @@ import profileLogo from '../../assets/img/profileLogo.png';
 import { getProfile, updateProfile } from '../../services/profileApi';
 import { helpRequestApi } from '../../services/helpRequestApi';
 import { contentApi } from '../../services/contentApi';
+import { getAllGroups } from '../../services/studyGroupApi';
 
 const ProfilePage = () => {
   const [activeModal, setActiveModal] = useState(null);
@@ -30,7 +31,7 @@ const ProfilePage = () => {
   // Datos mock para modales no implementados
   const mockFollowers = [];
   const mockFollowing = [];
-  const mockGroups = [];
+  const [userGroups, setUserGroups] = useState([]);
 
   useEffect(() => {
     // Usamos el token que ya está en sessionStorage (del login)
@@ -132,6 +133,8 @@ const ProfilePage = () => {
       await loadUserRequests();
     } else if (modalName === 'content') {
       await loadUserContent();
+    } else if (modalName === 'groups') {
+      await loadUserGroups();
     }
   };
   
@@ -178,6 +181,22 @@ const ProfilePage = () => {
     } catch (error) {
       console.error('Error loading user content:', error);
       setUserContent([]);
+    } finally {
+      setModalLoading(false);
+    }
+  };
+
+  const loadUserGroups = async () => {
+    setModalLoading(true);
+    try {
+      const groups = await getAllGroups();
+      // Assuming the API returns groups in a format compatible with GroupsModal
+      // or we transform them here if needed.
+      // For now, we'll assume they are directly usable.
+      setUserGroups(groups);
+    } catch (error) {
+      console.error('Error loading user groups:', error);
+      setUserGroups([]);
     } finally {
       setModalLoading(false);
     }
@@ -288,16 +307,8 @@ const ProfilePage = () => {
         {/* Modales */}
         {activeModal === 'followers' && <FollowersModal followers={mockFollowers} onClose={closeModal} />}
         {activeModal === 'following' && <FollowingModal following={mockFollowing} onClose={closeModal} />}
-        {activeModal === 'groups' && <GroupsModal groups={mockGroups} onClose={closeModal} />}
-        {activeModal === 'content' && (
-          <div>
-            {modalLoading ? (
-              <div className="text-center p-8">Cargando contenido...</div>
-            ) : (
-              <ContentModal content={userContent} onClose={closeModal} />
-            )}
-          </div>
-        )}
+        {activeModal === 'groups' && <GroupsModal groups={userGroups} onClose={closeModal} loading={modalLoading} />}
+        {activeModal === 'content' && <ContentModal content={userContent} onClose={closeModal} loading={modalLoading} />}
         {activeModal === 'requests' && (
           <div>
             {modalLoading ? (

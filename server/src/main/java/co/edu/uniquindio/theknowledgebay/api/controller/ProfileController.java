@@ -53,6 +53,7 @@ public class ProfileController {
         // Calculate user statistics
         int userContentCount = theKnowledgeBay.getContentCountByUserId(currentUserId);
         int userRequestsCount = theKnowledgeBay.getHelpRequestCountByUserId(currentUserId);
+        int userGroupCount = theKnowledgeBay.getUserStudyGroupCount(currentUserId);
         
         ProfileResponseDTO.ProfileResponseDTOBuilder responseBuilder = ProfileResponseDTO.builder()
                 .id(currentUserId)
@@ -62,7 +63,7 @@ public class ProfileController {
                 .lastName(user instanceof Student && ((Student) user).getLastName() != null ? ((Student) user).getLastName() : defaultName)
                 .dateBirth(user instanceof Student && ((Student) user).getDateBirth() != null ? ((Student) user).getDateBirth() : defaultDate)
                 .biography(user instanceof Student && ((Student) user).getBiography() != null ? ((Student) user).getBiography() : defaultBio)
-                .groups(0)    // TODO: implement groups logic
+                .groups(userGroupCount)
                 .contentCount(userContentCount)
                 .helpRequestCount(userRequestsCount)
                 .interests(user instanceof Student && ((Student) user).getStringInterests() != null ? ((Student) user).getStringInterests() : Arrays.asList());
@@ -167,6 +168,7 @@ public class ProfileController {
         // Calculate user statistics
         int userContentCount = theKnowledgeBay.getContentCountByUserId(currentUserId);
         int userRequestsCount = theKnowledgeBay.getHelpRequestCountByUserId(currentUserId);
+        int userGroupCountAfterUpdate = theKnowledgeBay.getUserStudyGroupCount(currentUserId);
         
         ProfileResponseDTO.ProfileResponseDTOBuilder responseBuilder = ProfileResponseDTO.builder()
                 .id(currentUserId)
@@ -176,7 +178,7 @@ public class ProfileController {
                 .lastName(user instanceof Student && ((Student) user).getLastName() != null ? ((Student) user).getLastName() : defaultName)
                 .dateBirth(user instanceof Student && ((Student) user).getDateBirth() != null ? ((Student) user).getDateBirth() : defaultDate)
                 .biography(user instanceof Student && ((Student) user).getBiography() != null ? ((Student) user).getBiography() : defaultBio)
-                .groups(0)    // TODO: implement groups logic
+                .groups(userGroupCountAfterUpdate)
                 .contentCount(userContentCount)
                 .helpRequestCount(userRequestsCount)
                 .interests(userInterests);

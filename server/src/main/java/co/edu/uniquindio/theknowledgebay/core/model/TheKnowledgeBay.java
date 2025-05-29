@@ -73,6 +73,36 @@ public class TheKnowledgeBay {
         contentTree.insert(c);
     }
 
+    // Method to get the count of study groups a user is part of
+    public int getUserStudyGroupCount(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return 0;
+        }
+        int count = 0;
+        if (studyGroups != null) {
+            for (int i = 0; i < studyGroups.getSize(); i++) {
+                StudyGroup group = studyGroups.get(i);
+                if (group != null && group.getMembers() != null) {
+                    // Assuming StudyGroup.getMembers() returns a list/collection of User or Student objects
+                    // And User/Student object has a getId() method returning String
+                    // We need to check if the user is in the member list
+                    // This part depends on the actual implementation of StudyGroup and its members list
+                    DoublyLinkedList<Student> members = group.getMembers();
+                    if (members != null) {
+                        for (int j = 0; j < members.getSize(); j++) {
+                            User member = members.get(j);
+                            if (member != null && userId.equals(member.getId())) {
+                                count++;
+                                break; // Found in this group, move to the next group
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return count;
+    }
+
     // HelpRequest operations
     public boolean addHelpRequest(HelpRequest helpRequest) {
         try {
