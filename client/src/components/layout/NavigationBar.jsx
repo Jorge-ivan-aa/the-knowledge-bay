@@ -36,6 +36,11 @@ const NavigationBar = ({ title }) => {
       icon: <MessageCircle size={18} />,
     },
     { 
+      path: '/study-groups', 
+      label: 'Grupos de Estudio', 
+      icon: <Users size={18} />,
+    },
+    { 
       path: '/help-request', 
       label: 'Solicitud de Ayuda', 
       icon: <HelpCircle size={18} />,

@@ -49,6 +49,13 @@ const Home = () => {
       linkTo: "/chat",
     },
     {
+      icon: "👥",
+      title: "Grupos de Estudio",
+      description:
+        "Únete a grupos temáticos para colaborar y compartir conocimientos.",
+      linkTo: "/study-groups",
+    },
+    {
       icon: "🆘",
       title: "Solicita Ayuda",
       description:
