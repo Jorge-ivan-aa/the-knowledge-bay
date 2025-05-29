@@ -21,9 +21,9 @@ public class StudentRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public DoublyLinkedList<Student> findAll() {
+    public List<Student> findAll() {
         String sql = "SELECT * FROM students";
-        return ListToDoublyLinkedList.convert(jdbcTemplate.query(sql, studentRowMapper));
+        return jdbcTemplate.query(sql, studentRowMapper);
     }
 
     public Student findById(int id) {

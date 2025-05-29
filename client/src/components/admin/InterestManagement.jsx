@@ -28,8 +28,19 @@ export default function InterestManagement() {
     try {
       setLoading(true);
       const data = await getAllInterests();
-      setInterests(data);
-      setError("");
+      const unique = [];
+      const seenIds = new Set();
+
+      for (const item of data) {
+        const id = item.idInterest;
+        if (!seenIds.has(id)) {
+          unique.push(item);
+          seenIds.add(id);
+        }
+      }
+
+      setInterests(unique);
+
     } catch (error) {
       setError("Error al cargar los intereses");
       console.error("Error loading interests:", error);

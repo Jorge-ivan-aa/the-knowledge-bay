@@ -112,11 +112,10 @@ const Home = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      3
       <NavigationBar title="Inicio" />
       <div className="container mx-auto py-8 px-4 flex-grow">
         {/* Encabezado de bienvenida */}
-        <div className="text-center mb-12">
+        <div className={`text-center mb-12 ${userRole === 'moderator' ? 'hidden' : ''}`}>
           <h1 className="text-4xl font-bold text-[var(--deep-sea)] mb-3">
             {userName
               ? `¡Bienvenido de nuevo, ${userName}!`

@@ -495,13 +495,13 @@ public class TheKnowledgeBay {
         }
 
         // Initialize students
-        DoublyLinkedList<Student> students = studentRepository.findAll();
+        List<Student> students = studentRepository.findAll();
         for (Student student : students) {
             this.users.add(student);
         }
 
         // Initialize interests
-        DoublyLinkedList<Interest> interests = interestRepository.findAll();
+        List<Interest> interests = interestRepository.findAll();
         for (Interest interest : interests) {
             this.interests.addLast(interest);
         }
@@ -509,20 +509,20 @@ public class TheKnowledgeBay {
         // Initialize affinity graph
         System.out.println("Initializing affinity graph...");
         initializeAffinityGraph();
-        System.out.println("Affinity graph initialized with " + interests.getSize() + " interests");
+        System.out.println("Affinity graph initialized with " + interests.size() + " interests");
     }
 
     public void updateData() {
         this.users.clear();
 
         // Initialize students
-        DoublyLinkedList<Student> students = studentRepository.findAll();
+        List<Student> students = studentRepository.findAll();
         for (Student student : students) {
             this.users.add(student);
         }
 
         // Initialize interests
-        DoublyLinkedList<Interest> interests = interestRepository.findAll();
+        List<Interest> interests = interestRepository.findAll();
         for (Interest interest : interests) {
             this.interests.addLast(interest);
         }
