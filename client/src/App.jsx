@@ -77,6 +77,7 @@ function App() {
             <Route path="/user/:userId" element={<UserProfileViewPage />} />
             <Route path="/chat" element={<ChatPage />} />
             <Route path="/study-groups" element={<StudyGroupsPage />} />
+            <Route path="/terms" element={<Terms />} />
 
             {/* Rutas protegidas por rol - Solo Moderador */}
             <Route
