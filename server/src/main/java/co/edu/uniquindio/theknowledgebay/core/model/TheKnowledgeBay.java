@@ -1080,18 +1080,14 @@ public class TheKnowledgeBay {
         
         DoublyLinkedNode<Student> current = users.getStudents().getHead();
         int groupCounter = 0;
-        Map<String, Integer> userGroups = new HashMap<>();
         
         while (current != null) {
             Student student = current.getData();
             if (student.getId() != null) {
-                // Assign group based on primary interest
-                int group = getGroupForStudent(student, userGroups, groupCounter++);
-                
                 Map<String, Object> node = new HashMap<>();
                 node.put("id", student.getId());
                 node.put("label", student.getUsername() != null ? student.getUsername() : student.getId());
-                node.put("group", group % 4); // Limit to 4 groups for colors
+                node.put("group", (groupCounter++) % 4);
                 
                 // Add interests
                 List<String> interestNames = new ArrayList<>();
@@ -1136,14 +1132,6 @@ public class TheKnowledgeBay {
         
         result.add(graphData);
         return result;
-    }
-
-    private int getGroupForStudent(Student student, Map<String, Integer> userGroups, int defaultGroup) {
-        if (student.getInterests() != null && student.getInterests().getSize() > 0) {
-            String primaryInterest = student.getInterests().get(0).getName();
-            return userGroups.computeIfAbsent(primaryInterest, k -> defaultGroup % 4);
-        }
-        return defaultGroup % 4;
     }
 
     public List<String> findShortestPathBetweenStudents(String studentId1, String studentId2) {
