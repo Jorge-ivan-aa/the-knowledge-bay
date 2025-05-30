@@ -1,4 +1,5 @@
 import axios from 'axios';
+import authApi from './authApi'; // Import authApi for authenticated requests
 
 const API_URL = '/api/studygroups';
 
@@ -68,27 +69,44 @@ export const getPostsByGroupId = async (groupId, page = 0, size = 10) => {
 
 export const likePost = async (groupId, postId) => {
     try {
-        const currentUser = getCurrentUser();
-        const response = await axios.post(`${API_URL}/${groupId}/posts/${postId}/like`, { userId: currentUser.authorId });
-        return response.data;
+        console.log(`🔍 [StudyGroupAPI] Attempting to like post ${postId} in group ${groupId}`);
+        
+        // Extract contentId from postId (format: "content-17" -> "17")
+        if (postId.startsWith('content-')) {
+            const contentId = postId.replace('content-', '');
+            console.log(`🎯 [StudyGroupAPI] Extracted contentId: ${contentId}`);
+            
+            // Use the content API endpoint instead of group endpoint
+            const response = await authApi.post(`/api/content/${contentId}/like`);
+            console.log(`✅ [StudyGroupAPI] Like successful:`, response);
+            return response.data;
+        } else {
+            console.error(`❌ [StudyGroupAPI] Invalid postId format: ${postId}`);
+            throw new Error(`Invalid postId format: ${postId}. Expected format: content-{id}`);
+        }
     } catch (error) {
-        console.error(`API_EXCEPTION: Error in likePost for ${postId}:`, error.response ? error.response : error.message);
+        console.error(`❌ [StudyGroupAPI] Error in likePost for ${postId}:`, error.response ? error.response : error.message);
         throw error; // Re-throw to be handled by caller
     }
 };
 
 export const addCommentToPost = async (groupId, postId, text) => {
     try {
+        console.log(`🔍 [StudyGroupAPI] Attempting to add comment to post ${postId} in group ${groupId}`);
+        
         const currentUser = getCurrentUser();
         const commentData = { 
             text,
             authorId: currentUser.authorId,
             authorName: currentUser.authorName
         };
-        const response = await axios.post(`${API_URL}/${groupId}/posts/${postId}/comments`, commentData);
+        
+        // For now, use the study group endpoint for comments since there's no content-specific comment endpoint
+        const response = await authApi.post(`/api/studygroups/${groupId}/posts/${postId}/comments`, commentData);
+        console.log(`✅ [StudyGroupAPI] Comment added successfully:`, response);
         return response.data;
     } catch (error) {
-        console.error(`API_EXCEPTION: Error in addCommentToPost for ${postId}:`, error.response ? error.response : error.message);
+        console.error(`❌ [StudyGroupAPI] Error in addCommentToPost for ${postId}:`, error.response ? error.response : error.message);
         throw error; // Re-throw to be handled by caller
     }
 };

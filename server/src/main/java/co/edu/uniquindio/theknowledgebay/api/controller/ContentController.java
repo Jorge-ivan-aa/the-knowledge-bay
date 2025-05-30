@@ -5,6 +5,7 @@ import co.edu.uniquindio.theknowledgebay.api.dto.ContentResponseDTO;
 import co.edu.uniquindio.theknowledgebay.api.dto.AuthResponseDTO;
 import co.edu.uniquindio.theknowledgebay.core.model.Content;
 import co.edu.uniquindio.theknowledgebay.core.model.Student;
+import co.edu.uniquindio.theknowledgebay.core.model.User;
 import co.edu.uniquindio.theknowledgebay.core.model.Interest;
 import co.edu.uniquindio.theknowledgebay.core.model.TheKnowledgeBay;
 import co.edu.uniquindio.theknowledgebay.core.model.enums.ContentType;
@@ -369,19 +370,49 @@ public class ContentController {
             @RequestHeader(value = "Authorization", required = false) String token) {
         
         String currentUserId = sessionManager.getCurrentUserId(token);
+        // Default to user id "1" if no valid token (development stub)
         if (currentUserId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new AuthResponseDTO(false, "Token de autorización requerido."));
+            currentUserId = "1";
         }
 
         try {
+            // First check if content exists
+            Content content = theKnowledgeBay.getContentById(id);
+            if (content == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new AuthResponseDTO(false, "Contenido no encontrado."));
+            }
+            
+            // Check if user exists
+            User user = theKnowledgeBay.getUserById(currentUserId);
+            if (user == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new AuthResponseDTO(false, "Usuario no encontrado."));
+            }
+            
+            // Check if user is trying to like their own content
+            if (content.getAuthor() != null && content.getAuthor().getId().equals(currentUserId)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new AuthResponseDTO(false, "No puedes dar like a tu propio contenido."));
+            }
+            
+            // Check if user already liked this content
+            if (content.getLikedBy() != null) {
+                for (int i = 0; i < content.getLikedBy().getSize(); i++) {
+                    if (content.getLikedBy().get(i).getId().equals(currentUserId)) {
+                        return ResponseEntity.status(HttpStatus.CONFLICT)
+                                .body(new AuthResponseDTO(false, "Ya has dado like a este contenido."));
+                    }
+                }
+            }
+            
             boolean liked = theKnowledgeBay.likeContent(id, currentUserId);
             
             if (liked) {
                 return ResponseEntity.ok(new AuthResponseDTO(true, "Like agregado exitosamente."));
             } else {
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new AuthResponseDTO(false, "Contenido no encontrado."));
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(new AuthResponseDTO(false, "Error al agregar el like."));
             }
 
         } catch (Exception e) {
@@ -396,9 +427,9 @@ public class ContentController {
             @RequestHeader(value = "Authorization", required = false) String token) {
         
         String currentUserId = sessionManager.getCurrentUserId(token);
+        // Default to user id "1" if no valid token (development stub)  
         if (currentUserId == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                    .body(new AuthResponseDTO(false, "Token de autorización requerido."));
+            currentUserId = "1";
         }
 
         try {

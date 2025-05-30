@@ -19,6 +19,7 @@ import co.edu.uniquindio.theknowledgebay.core.model.User;
 import co.edu.uniquindio.theknowledgebay.core.model.Student;
 import java.time.ZoneId;
 import co.edu.uniquindio.theknowledgebay.core.model.Comment;
+import java.time.LocalDate;
 
 @Service
 public class StudyGroupService {
@@ -158,19 +159,51 @@ public class StudyGroupService {
     }
 
     public CommentDTO addCommentToPost(String groupId, String postId, String authorId, String authorName, String text) {
-        PostDTO post = getPostById(groupId, postId)
-            .orElseThrow(() -> new NoSuchElementException("Post not found: " + postId + " in group " + groupId));
-        
-        UserSummary author = new UserSummary(authorId, authorName);
-        String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm, dd MMM yyyy"));
-        CommentDTO newComment = new CommentDTO("c" + commentCounter.incrementAndGet(), author, text, timestamp);
-        
-        // Ensure comments list is initialized
-        if (post.getComments() == null) {
-            post.setComments(new ArrayList<>());
+        // Extract the actual content ID from the postId (e.g., "content-17" -> 17)
+        if (postId.startsWith("content-")) {
+            try {
+                int contentId = Integer.parseInt(postId.substring(8)); // Remove "content-" prefix
+                
+                // Get the content directly from TheKnowledgeBay
+                Content content = theKnowledgeBay.getContentById(contentId);
+                if (content == null) {
+                    throw new NoSuchElementException("Content not found: " + contentId);
+                }
+                
+                // Get the author student
+                Student author = (Student) theKnowledgeBay.getUserById(authorId);
+                if (author == null) {
+                    throw new NoSuchElementException("User not found: " + authorId);
+                }
+                
+                // Create a new comment directly in the content model
+                Comment newComment = Comment.builder()
+                    .commentId((int) commentCounter.incrementAndGet())
+                    .text(text)
+                    .author(author)
+                    .date(LocalDate.now())
+                    .build();
+                
+                // Add the comment to the content's comments list
+                if (content.getComments() == null) {
+                    content.setComments(new DoublyLinkedList<>());
+                }
+                content.getComments().addLast(newComment);
+                
+                // Create and return the CommentDTO
+                UserSummary authorSummary = new UserSummary(authorId, authorName);
+                String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm, dd MMM yyyy"));
+                return new CommentDTO(String.valueOf(newComment.getCommentId()), authorSummary, text, timestamp);
+                
+            } catch (NumberFormatException e) {
+                throw new NoSuchElementException("Invalid content ID format: " + postId);
+            }
+        } else if (postId.startsWith("helpreq-")) {
+            // Handle help request comments if needed
+            throw new UnsupportedOperationException("Comments on help requests not yet implemented");
+        } else {
+            throw new NoSuchElementException("Unsupported post type: " + postId);
         }
-        post.getComments().add(newComment);
-        return newComment;
     }
     
     // This method is now for MANUAL post creation by an authorized user (e.g. admin/moderator)
@@ -232,7 +265,17 @@ public class StudyGroupService {
         User authorModel = content.getAuthor();
         UserSummary authorSummary = null;
         if (authorModel != null) {
-            authorSummary = new UserSummary(authorModel.getId(), authorModel.getUsername());
+            // Create proper display name - combine firstName and lastName if available, otherwise use username
+            String displayName = authorModel.getUsername(); // fallback
+            if (authorModel instanceof Student) {
+                Student student = (Student) authorModel;
+                if (student.getFirstName() != null && student.getLastName() != null) {
+                    displayName = student.getFirstName() + " " + student.getLastName();
+                } else if (student.getFirstName() != null) {
+                    displayName = student.getFirstName();
+                }
+            }
+            authorSummary = new UserSummary(authorModel.getId(), displayName);
         }
 
         // Convert LocalDate to String timestamp (ISO_DATE_TIME format for consistency)
@@ -309,22 +352,43 @@ public class StudyGroupService {
     
     // Helper method to map individual Comment to CommentDTO
     private CommentDTO mapCommentToDTO(Comment comment) {
-        if (comment == null) return null;
+        if (comment == null) {
+            System.out.println("WARNING: Attempted to map null comment to DTO - skipping");
+            return null; // Still return null, but add logging
+        }
         
         Student author = comment.getAuthor();
-        UserSummary authorSummary = new UserSummary(
-            author != null ? author.getId() : "unknown_user",
-            author != null ? author.getUsername() : "Usuario Desconocido"
-        );
+        String displayName = "Usuario Desconocido"; // fallback
+        String authorId = "unknown_user";
+        
+        if (author != null) {
+            authorId = author.getId();
+            // Create proper display name - combine firstName and lastName if available, otherwise use username
+            if (author.getFirstName() != null && author.getLastName() != null) {
+                displayName = author.getFirstName() + " " + author.getLastName();
+            } else if (author.getFirstName() != null) {
+                displayName = author.getFirstName();
+            } else if (author.getUsername() != null) {
+                displayName = author.getUsername();
+            }
+        }
+        
+        UserSummary authorSummary = new UserSummary(authorId, displayName);
         
         String timestamp = comment.getDate() != null ? 
                           comment.getDate().atStartOfDay(ZoneId.systemDefault()).format(DateTimeFormatter.ofPattern("HH:mm, dd MMM yyyy")) :
                           LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm, dd MMM yyyy"));
         
+        // Ensure commentId is valid (commentId is primitive int, so cannot be null)
+        String commentIdStr = String.valueOf(comment.getCommentId());
+        
+        // Ensure text is not null
+        String commentText = comment.getText() != null ? comment.getText() : "";
+        
         return new CommentDTO(
-            String.valueOf(comment.getCommentId()),
+            commentIdStr,
             authorSummary,
-            comment.getText(),
+            commentText,
             timestamp
         );
     }
@@ -333,10 +397,22 @@ public class StudyGroupService {
         if (helpRequest == null) return null;
 
         Student authorModel = helpRequest.getStudent();
-        UserSummary authorSummary = new UserSummary(
-            authorModel != null ? authorModel.getId() : "unknown_student",
-            authorModel != null ? authorModel.getUsername() : "Unknown Student"
-        );
+        String displayName = "Unknown Student"; // fallback
+        String authorId = "unknown_student";
+        
+        if (authorModel != null) {
+            authorId = authorModel.getId();
+            // Create proper display name - combine firstName and lastName if available, otherwise use username
+            if (authorModel.getFirstName() != null && authorModel.getLastName() != null) {
+                displayName = authorModel.getFirstName() + " " + authorModel.getLastName();
+            } else if (authorModel.getFirstName() != null) {
+                displayName = authorModel.getFirstName();
+            } else {
+                displayName = authorModel.getUsername();
+            }
+        }
+        
+        UserSummary authorSummary = new UserSummary(authorId, displayName);
 
         HelpRequestPostDTO postDTO = new HelpRequestPostDTO();
         postDTO.setId("helpreq-" + helpRequest.getRequestId());

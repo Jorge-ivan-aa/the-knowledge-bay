@@ -157,18 +157,18 @@ const PostItem = ({
           </h4>
           {post.comments && post.comments.length > 0 ? (
             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-              {post.comments.map((comment) => (
+              {post.comments.filter(comment => comment !== null && comment !== undefined).map((comment) => (
                 <div
                   key={comment.id}
                   className="flex items-start text-xs bg-gray-50 p-2 rounded-md"
                 >
                   <div className="flex-grow">
                     <span className="font-semibold text-[var(--deep-sea)]">
-                      {comment.author.name}:
+                      {comment.author?.name || 'Usuario Desconocido'}:
                     </span>
                     <span className="text-gray-700 break-words">
                       {" "}
-                      {comment.text}
+                      {comment.text || ''}
                     </span>
                     {comment.timestamp && (
                       <p className="text-[10px] text-gray-500 mt-0.5">

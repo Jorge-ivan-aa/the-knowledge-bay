@@ -91,11 +91,31 @@ const StudyGroupsPage = () => {
 
   const handleLikePost = async (groupId, postId) => {
     try {
-      const updatedPost = await likePost(groupId, postId);
-      const updatePostInState = (postsList) => 
-        postsList.map((post) => (post.id === postId ? updatedPost : post));
+      const response = await likePost(groupId, postId);
       
-      setCurrentGroupPosts(prevPosts => updatePostInState(prevPosts));
+      // Check if the like was successful
+      if (response && response.success) {
+        // Update only the like-related properties of the post
+        const updatePostInState = (postsList) => 
+          postsList.map((post) => {
+            if (post.id === postId) {
+              // Toggle the like status and update count
+              const newLikedByMe = !post.likedByMe;
+              const newLikeCount = newLikedByMe ? 
+                (post.likes || 0) + 1 : 
+                Math.max((post.likes || 0) - 1, 0);
+              
+              return {
+                ...post,
+                likedByMe: newLikedByMe,
+                likes: newLikeCount
+              };
+            }
+            return post;
+          });
+        
+        setCurrentGroupPosts(prevPosts => updatePostInState(prevPosts));
+      }
 
     } catch (error) {
       console.error("Error liking post:", error);
