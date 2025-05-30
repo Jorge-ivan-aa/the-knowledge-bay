@@ -417,7 +417,7 @@ public class TestDataLoaderService {
         boolean requestAdded = theKnowledgeBay.addHelpRequest(helpRequest);
         System.out.println("Solicitud de ayuda agregada al sistema: " + requestAdded + " - ID de la solicitud: " + helpRequest.getRequestId());
         
-        if (student.getHelpRequests() == null) {
+         if (student.getHelpRequests() == null) {
             student.setHelpRequests(new DoublyLinkedList<>());
         }
         student.getHelpRequests().addLast(helpRequest);

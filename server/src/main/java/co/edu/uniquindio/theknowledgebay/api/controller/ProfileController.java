@@ -75,11 +75,11 @@ public class ProfileController {
             Student student = (Student) user;
             responseBuilder.following(student.getFollowingCount());
             responseBuilder.followers(student.getFollowersCount());
-            responseBuilder.isFollowing(false); // Or based on specific logic if viewing another's profile via this endpoint
+            responseBuilder.currentUserFollowing(false); // Or based on specific logic if viewing another's profile via this endpoint
         } else {
             responseBuilder.following(0);
             responseBuilder.followers(0);
-            responseBuilder.isFollowing(false);
+            responseBuilder.currentUserFollowing(false);
         }
                 
         return ResponseEntity.ok(responseBuilder.build());
@@ -190,11 +190,11 @@ public class ProfileController {
             Student student = (Student) user;
             responseBuilder.following(student.getFollowingCount());
             responseBuilder.followers(student.getFollowersCount());
-            responseBuilder.isFollowing(false); // Own profile, not following self in this context
+            responseBuilder.currentUserFollowing(false); // Own profile, not following self in this context
         } else {
             responseBuilder.following(0);
             responseBuilder.followers(0);
-            responseBuilder.isFollowing(false);
+            responseBuilder.currentUserFollowing(false);
         }
                 
         System.out.println("PUT /api/profile - Usuario actualizado correctamente: " + user.getUsername());
@@ -357,14 +357,23 @@ public class ProfileController {
             responseBuilder.following(student.getFollowingCount());
             responseBuilder.followers(student.getFollowersCount());
             // Check if current user is following this user
-            responseBuilder.isFollowing(theKnowledgeBay.isUserFollowing(currentUserId, userId));
+            boolean isFollowing = theKnowledgeBay.isUserFollowing(currentUserId, userId);
+            System.out.println("GET /api/profile/" + userId + " - isFollowing check: " + currentUserId + " follows " + userId + " = " + isFollowing);
+            responseBuilder.currentUserFollowing(isFollowing);
         } else {
             responseBuilder.following(0);
             responseBuilder.followers(0);
-            responseBuilder.isFollowing(false);
+            responseBuilder.currentUserFollowing(false);
         }
         
+        ProfileResponseDTO response = responseBuilder.build();
+        System.out.println("GET /api/profile/" + userId + " - Response DTO before return:");
+        System.out.println("  - currentUserFollowing: " + response.isCurrentUserFollowing());
+        System.out.println("  - following: " + response.getFollowing());
+        System.out.println("  - followers: " + response.getFollowers());
+        System.out.println("  - groups: " + response.getGroups());
+        System.out.println("  - contentCount: " + response.getContentCount());
         System.out.println("GET /api/profile/" + userId + " - Perfil devuelto exitosamente");
-        return ResponseEntity.ok(responseBuilder.build());
+        return ResponseEntity.ok(response);
     }
 }

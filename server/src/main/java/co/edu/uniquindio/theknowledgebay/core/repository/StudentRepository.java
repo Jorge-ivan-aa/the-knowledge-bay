@@ -51,20 +51,20 @@ public class StudentRepository {
             );
         } else {
             // Si no tiene ID, usar INSERT sin ID (autoincrement)
-            String sql = """
-                    INSERT INTO students (username, email, password, first_name, last_name, date_birth, biography)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                    """;
+        String sql = """
+                INSERT INTO students (username, email, password, first_name, last_name, date_birth, biography)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """;
 
-            jdbcTemplate.update(sql,
-                    student.getUsername(),
-                    student.getEmail(),
-                    student.getPassword(),
-                    student.getFirstName(),
-                    student.getLastName(),
-                    student.getDateBirth() == null ? null : student.getDateBirth().toString(),
-                    student.getBiography()
-            );
+        jdbcTemplate.update(sql,
+                student.getUsername(),
+                student.getEmail(),
+                student.getPassword(),
+                student.getFirstName(),
+                student.getLastName(),
+                student.getDateBirth() == null ? null : student.getDateBirth().toString(),
+                student.getBiography()
+        );
         }
     }
 
